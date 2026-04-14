@@ -1,0 +1,680 @@
+# data.aws_ami.ubuntu:
+data "aws_ami" "ubuntu" {
+    architecture          = "x86_64"
+    arn                   = "arn:aws:ec2:eu-central-1::image/ami-018f28221ffaa9b3b"
+    block_device_mappings = [
+        {
+            device_name  = "/dev/sda1"
+            ebs          = {
+                "delete_on_termination"      = "true"
+                "encrypted"                  = "false"
+                "iops"                       = "0"
+                "snapshot_id"                = "snap-06e02d7d2ae6b6cff"
+                "throughput"                 = "0"
+                "volume_initialization_rate" = "0"
+                "volume_size"                = "8"
+                "volume_type"                = "gp3"
+            }
+            no_device    = [90mnull[0m[0m
+            virtual_name = [90mnull[0m[0m
+        },
+        {
+            device_name  = "/dev/sdb"
+            ebs          = {}
+            no_device    = [90mnull[0m[0m
+            virtual_name = "ephemeral0"
+        },
+        {
+            device_name  = "/dev/sdc"
+            ebs          = {}
+            no_device    = [90mnull[0m[0m
+            virtual_name = "ephemeral1"
+        },
+    ]
+    boot_mode             = "uefi-preferred"
+    creation_date         = "2026-04-09T14:12:56.000Z"
+    deprecation_time      = "2028-04-09T14:12:56.000Z"
+    description           = "Canonical, Ubuntu, 24.04, amd64 noble image"
+    ena_support           = true
+    hypervisor            = "xen"
+    id                    = "ami-018f28221ffaa9b3b"
+    image_id              = "ami-018f28221ffaa9b3b"
+    image_location        = "amazon/ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20260409"
+    image_owner_alias     = "amazon"
+    image_type            = "machine"
+    imds_support          = "v2.0"
+    include_deprecated    = false
+    kernel_id             = [90mnull[0m[0m
+    last_launched_time    = [90mnull[0m[0m
+    most_recent           = true
+    name                  = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20260409"
+    owner_id              = "099720109477"
+    owners                = [
+        "099720109477",
+    ]
+    platform              = [90mnull[0m[0m
+    platform_details      = "Linux/UNIX"
+    product_codes         = []
+    public                = true
+    ramdisk_id            = [90mnull[0m[0m
+    region                = "eu-central-1"
+    root_device_name      = "/dev/sda1"
+    root_device_type      = "ebs"
+    root_snapshot_id      = "snap-06e02d7d2ae6b6cff"
+    sriov_net_support     = "simple"
+    state                 = "available"
+    state_reason          = {
+        "code"    = "UNSET"
+        "message" = "UNSET"
+    }
+    tags                  = {}
+    tpm_support           = [90mnull[0m[0m
+    usage_operation       = "RunInstances"
+    virtualization_type   = "hvm"
+
+    filter {
+        name   = "name"
+        values = [
+            "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*",
+        ]
+    }
+    filter {
+        name   = "virtualization-type"
+        values = [
+            "hvm",
+        ]
+    }
+}
+
+# data.aws_availability_zones.available:
+data "aws_availability_zones" "available" {
+    group_names = [
+        "eu-central-1-zg-1",
+    ]
+    id          = "eu-central-1"
+    names       = [
+        "eu-central-1a",
+        "eu-central-1b",
+        "eu-central-1c",
+    ]
+    region      = "eu-central-1"
+    state       = "available"
+    zone_ids    = [
+        "euc1-az2",
+        "euc1-az3",
+        "euc1-az1",
+    ]
+}
+
+# data.aws_iam_policy_document.ec2_assume_role:
+data "aws_iam_policy_document" "ec2_assume_role" {
+    id            = "2851119427"
+    json          = jsonencode(
+        {
+            Statement = [
+                {
+                    Action    = "sts:AssumeRole"
+                    Effect    = "Allow"
+                    Principal = {
+                        Service = "ec2.amazonaws.com"
+                    }
+                },
+            ]
+            Version   = "2012-10-17"
+        }
+    )
+    minified_json = jsonencode(
+        {
+            Statement = [
+                {
+                    Action    = "sts:AssumeRole"
+                    Effect    = "Allow"
+                    Principal = {
+                        Service = "ec2.amazonaws.com"
+                    }
+                },
+            ]
+            Version   = "2012-10-17"
+        }
+    )
+    version       = "2012-10-17"
+
+    statement {
+        actions       = [
+            "sts:AssumeRole",
+        ]
+        effect        = "Allow"
+        not_actions   = []
+        not_resources = []
+        resources     = []
+        sid           = [90mnull[0m[0m
+
+        principals {
+            identifiers = [
+                "ec2.amazonaws.com",
+            ]
+            type        = "Service"
+        }
+    }
+}
+
+# aws_iam_instance_profile.jenkins:
+resource "aws_iam_instance_profile" "jenkins" {
+    arn         = "arn:aws:iam::132334512300:instance-profile/supermario-jenkins-instance-profile"
+    create_date = "2026-04-14T10:07:05Z"
+    id          = "supermario-jenkins-instance-profile"
+    name        = "supermario-jenkins-instance-profile"
+    name_prefix = [90mnull[0m[0m
+    path        = "/"
+    role        = "supermario-jenkins-ec2-role"
+    tags        = {}
+    tags_all    = {}
+    unique_id   = "AIPAR5T6ANCWKAF2YFHXX"
+}
+
+# aws_iam_role.jenkins_ec2_role:
+resource "aws_iam_role" "jenkins_ec2_role" {
+    arn                   = "arn:aws:iam::132334512300:role/supermario-jenkins-ec2-role"
+    assume_role_policy    = jsonencode(
+        {
+            Statement = [
+                {
+                    Action    = "sts:AssumeRole"
+                    Effect    = "Allow"
+                    Principal = {
+                        Service = "ec2.amazonaws.com"
+                    }
+                },
+            ]
+            Version   = "2012-10-17"
+        }
+    )
+    create_date           = "2026-04-14T10:07:04Z"
+    description           = [90mnull[0m[0m
+    force_detach_policies = false
+    id                    = "supermario-jenkins-ec2-role"
+    managed_policy_arns   = [
+        "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+    ]
+    max_session_duration  = 3600
+    name                  = "supermario-jenkins-ec2-role"
+    name_prefix           = [90mnull[0m[0m
+    path                  = "/"
+    permissions_boundary  = [90mnull[0m[0m
+    tags                  = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-jenkins-ec2-role"
+        "Project"     = "super-mario"
+    }
+    tags_all              = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-jenkins-ec2-role"
+        "Project"     = "super-mario"
+    }
+    unique_id             = "AROAR5T6ANCWL2WOXO76D"
+}
+
+# aws_iam_role_policy_attachment.ssm_core:
+resource "aws_iam_role_policy_attachment" "ssm_core" {
+    id         = "supermario-jenkins-ec2-role/arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    role       = "supermario-jenkins-ec2-role"
+}
+
+# aws_instance.jenkins:
+resource "aws_instance" "jenkins" {
+    ami                                  = "ami-018f28221ffaa9b3b"
+    arn                                  = "arn:aws:ec2:eu-central-1:132334512300:instance/i-034719a0cadd04fc8"
+    associate_public_ip_address          = true
+    availability_zone                    = "eu-central-1b"
+    disable_api_stop                     = false
+    disable_api_termination              = false
+    ebs_optimized                        = false
+    force_destroy                        = false
+    get_password_data                    = false
+    hibernation                          = false
+    host_id                              = [90mnull[0m[0m
+    iam_instance_profile                 = "supermario-jenkins-instance-profile"
+    id                                   = "i-034719a0cadd04fc8"
+    instance_initiated_shutdown_behavior = "stop"
+    instance_lifecycle                   = [90mnull[0m[0m
+    instance_state                       = "running"
+    instance_type                        = "c7i-flex.large"
+    ipv6_address_count                   = 0
+    ipv6_addresses                       = []
+    key_name                             = [90mnull[0m[0m
+    monitoring                           = false
+    outpost_arn                          = [90mnull[0m[0m
+    password_data                        = [90mnull[0m[0m
+    placement_group                      = [90mnull[0m[0m
+    placement_group_id                   = [90mnull[0m[0m
+    placement_partition_number           = 0
+    primary_network_interface_id         = "eni-0032849a49930dd4d"
+    private_dns                          = "ip-10-50-1-103.eu-central-1.compute.internal"
+    private_ip                           = "10.50.1.103"
+    public_dns                           = "ec2-18-196-129-153.eu-central-1.compute.amazonaws.com"
+    public_ip                            = "18.196.129.153"
+    region                               = "eu-central-1"
+    secondary_private_ips                = []
+    security_groups                      = []
+    source_dest_check                    = true
+    spot_instance_request_id             = [90mnull[0m[0m
+    subnet_id                            = "subnet-0bd745669c5eae0ee"
+    tags                                 = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-jenkins-ec2"
+        "Project"     = "super-mario"
+        "Role"        = "jenkins"
+    }
+    tags_all                             = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-jenkins-ec2"
+        "Project"     = "super-mario"
+        "Role"        = "jenkins"
+    }
+    tenancy                              = "default"
+    user_data                            = <<-EOT
+        #!/bin/bash
+        set -euxo pipefail
+        
+        exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
+        
+        export DEBIAN_FRONTEND=noninteractive
+        
+        apt_get() {
+          apt-get -o DPkg::Lock::Timeout=600 -y "$@"
+        }
+        
+        # Base repo sync
+        apt_get update
+        
+        # Base packages + Java + Docker
+        apt_get install \
+          ca-certificates \
+          curl \
+          wget \
+          gnupg \
+          unzip \
+          jq \
+          git \
+          apt-transport-https \
+          software-properties-common \
+          fontconfig \
+          openjdk-21-jre \
+          docker.io
+        
+        systemctl enable --now docker
+        
+        # Jenkins official LTS repo
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key \
+          -o /etc/apt/keyrings/jenkins-keyring.asc
+        
+        echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" \
+          > /etc/apt/sources.list.d/jenkins.list
+        
+        apt_get update
+        apt_get install jenkins
+        
+        usermod -aG docker ubuntu || true
+        usermod -aG docker jenkins || true
+        
+        systemctl enable --now jenkins
+        
+        # Wait until Jenkins creates the initial admin password
+        for i in $(seq 1 60); do
+          if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]; then
+            break
+          fi
+          sleep 2
+        done
+        
+        mkdir -p /home/ubuntu/bootstrap-info
+        {
+          echo "Jenkins initial admin password:"
+          cat /var/lib/jenkins/secrets/initialAdminPassword
+        } > /home/ubuntu/bootstrap-info/README.txt
+        
+        chown -R ubuntu:ubuntu /home/ubuntu/bootstrap-info
+        chmod 644 /home/ubuntu/bootstrap-info/README.txt
+        
+        docker --version
+        java -version
+        systemctl status docker --no-pager || true
+        systemctl status jenkins --no-pager || true
+        ``
+    EOT
+    user_data_replace_on_change          = false
+    vpc_security_group_ids               = [
+        "sg-0804d7a66cc942371",
+    ]
+
+    capacity_reservation_specification {
+        capacity_reservation_preference = "open"
+    }
+
+    cpu_options {
+        amd_sev_snp           = [90mnull[0m[0m
+        core_count            = 1
+        nested_virtualization = [90mnull[0m[0m
+        threads_per_core      = 2
+    }
+
+    enclave_options {
+        enabled = false
+    }
+
+    maintenance_options {
+        auto_recovery = "default"
+    }
+
+    metadata_options {
+        http_endpoint               = "enabled"
+        http_protocol_ipv6          = "disabled"
+        http_put_response_hop_limit = 2
+        http_tokens                 = "required"
+        instance_metadata_tags      = "disabled"
+    }
+
+    primary_network_interface {
+        delete_on_termination = true
+        network_interface_id  = "eni-0032849a49930dd4d"
+    }
+
+    private_dns_name_options {
+        enable_resource_name_dns_a_record    = false
+        enable_resource_name_dns_aaaa_record = false
+        hostname_type                        = "ip-name"
+    }
+
+    root_block_device {
+        delete_on_termination = true
+        device_name           = "/dev/sda1"
+        encrypted             = true
+        iops                  = 3000
+        kms_key_id            = "arn:aws:kms:eu-central-1:132334512300:key/59cec30d-f0c0-46d6-9f51-cb06ed65eea6"
+        tags                  = {}
+        tags_all              = {}
+        throughput            = 125
+        volume_id             = "vol-0ef5ee01af76b374a"
+        volume_size           = 30
+        volume_type           = "gp3"
+    }
+}
+
+# aws_internet_gateway.this:
+resource "aws_internet_gateway" "this" {
+    arn      = "arn:aws:ec2:eu-central-1:132334512300:internet-gateway/igw-0f51022d12d01a825"
+    id       = "igw-0f51022d12d01a825"
+    owner_id = "132334512300"
+    region   = "eu-central-1"
+    tags     = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-igw"
+        "Project"     = "super-mario"
+    }
+    tags_all = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-igw"
+        "Project"     = "super-mario"
+    }
+    vpc_id   = "vpc-0d53d242cecae3e0c"
+}
+
+# aws_route_table.public:
+resource "aws_route_table" "public" {
+    arn              = "arn:aws:ec2:eu-central-1:132334512300:route-table/rtb-0ce9c69b144e4fecc"
+    id               = "rtb-0ce9c69b144e4fecc"
+    owner_id         = "132334512300"
+    propagating_vgws = []
+    region           = "eu-central-1"
+    route            = [
+        {
+            carrier_gateway_id         = [90mnull[0m[0m
+            cidr_block                 = "0.0.0.0/0"
+            core_network_arn           = [90mnull[0m[0m
+            destination_prefix_list_id = [90mnull[0m[0m
+            egress_only_gateway_id     = [90mnull[0m[0m
+            gateway_id                 = "igw-0f51022d12d01a825"
+            ipv6_cidr_block            = [90mnull[0m[0m
+            local_gateway_id           = [90mnull[0m[0m
+            nat_gateway_id             = [90mnull[0m[0m
+            network_interface_id       = [90mnull[0m[0m
+            transit_gateway_id         = [90mnull[0m[0m
+            vpc_endpoint_id            = [90mnull[0m[0m
+            vpc_peering_connection_id  = [90mnull[0m[0m
+        },
+    ]
+    tags             = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-public-rt"
+        "Project"     = "super-mario"
+    }
+    tags_all         = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-public-rt"
+        "Project"     = "super-mario"
+    }
+    vpc_id           = "vpc-0d53d242cecae3e0c"
+}
+
+# aws_route_table_association.public[0]:
+resource "aws_route_table_association" "public" {
+    gateway_id     = [90mnull[0m[0m
+    id             = "rtbassoc-034a2c070164dc7b0"
+    region         = "eu-central-1"
+    route_table_id = "rtb-0ce9c69b144e4fecc"
+    subnet_id      = "subnet-0bd745669c5eae0ee"
+}
+
+# aws_route_table_association.public[1]:
+resource "aws_route_table_association" "public" {
+    gateway_id     = [90mnull[0m[0m
+    id             = "rtbassoc-0faee487ecad7392a"
+    region         = "eu-central-1"
+    route_table_id = "rtb-0ce9c69b144e4fecc"
+    subnet_id      = "subnet-05aac71f2d97e505f"
+}
+
+# aws_security_group.jenkins:
+resource "aws_security_group" "jenkins" {
+    arn                    = "arn:aws:ec2:eu-central-1:132334512300:security-group/sg-0804d7a66cc942371"
+    description            = "Zero-inbound SG for Jenkins EC2 managed through SSM"
+    egress                 = [
+        {
+            cidr_blocks      = [
+                "0.0.0.0/0",
+            ]
+            description      = "Allow all outbound"
+            from_port        = 0
+            ipv6_cidr_blocks = []
+            prefix_list_ids  = []
+            protocol         = "-1"
+            security_groups  = []
+            self             = false
+            to_port          = 0
+        },
+    ]
+    id                     = "sg-0804d7a66cc942371"
+    ingress                = [
+        {
+            cidr_blocks      = [
+                "147.161.244.200/32",
+            ]
+            description      = "Jenkins UI"
+            from_port        = 8080
+            ipv6_cidr_blocks = []
+            prefix_list_ids  = []
+            protocol         = "tcp"
+            security_groups  = []
+            self             = false
+            to_port          = 8080
+        },
+        {
+            cidr_blocks      = [
+                "147.161.244.200/32",
+            ]
+            description      = "Mario app"
+            from_port        = 3000
+            ipv6_cidr_blocks = []
+            prefix_list_ids  = []
+            protocol         = "tcp"
+            security_groups  = []
+            self             = false
+            to_port          = 3000
+        },
+    ]
+    name                   = "supermario-jenkins-sg"
+    name_prefix            = [90mnull[0m[0m
+    owner_id               = "132334512300"
+    region                 = "eu-central-1"
+    revoke_rules_on_delete = false
+    tags                   = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-jenkins-sg"
+        "Project"     = "super-mario"
+    }
+    tags_all               = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-jenkins-sg"
+        "Project"     = "super-mario"
+    }
+    vpc_id                 = "vpc-0d53d242cecae3e0c"
+}
+
+# aws_subnet.public[0]:
+resource "aws_subnet" "public" {
+    arn                                            = "arn:aws:ec2:eu-central-1:132334512300:subnet/subnet-0bd745669c5eae0ee"
+    assign_ipv6_address_on_creation                = false
+    availability_zone                              = "eu-central-1b"
+    availability_zone_id                           = "euc1-az3"
+    cidr_block                                     = "10.50.1.0/24"
+    customer_owned_ipv4_pool                       = [90mnull[0m[0m
+    enable_dns64                                   = false
+    enable_lni_at_device_index                     = 0
+    enable_resource_name_dns_a_record_on_launch    = false
+    enable_resource_name_dns_aaaa_record_on_launch = false
+    id                                             = "subnet-0bd745669c5eae0ee"
+    ipv6_cidr_block                                = [90mnull[0m[0m
+    ipv6_cidr_block_association_id                 = [90mnull[0m[0m
+    ipv6_native                                    = false
+    map_customer_owned_ip_on_launch                = false
+    map_public_ip_on_launch                        = true
+    outpost_arn                                    = [90mnull[0m[0m
+    owner_id                                       = "132334512300"
+    private_dns_hostname_type_on_launch            = "ip-name"
+    region                                         = "eu-central-1"
+    tags                                           = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-public-1"
+        "Project"     = "super-mario"
+        "Tier"        = "public"
+    }
+    tags_all                                       = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-public-1"
+        "Project"     = "super-mario"
+        "Tier"        = "public"
+    }
+    vpc_id                                         = "vpc-0d53d242cecae3e0c"
+}
+
+# aws_subnet.public[1]:
+resource "aws_subnet" "public" {
+    arn                                            = "arn:aws:ec2:eu-central-1:132334512300:subnet/subnet-05aac71f2d97e505f"
+    assign_ipv6_address_on_creation                = false
+    availability_zone                              = "eu-central-1c"
+    availability_zone_id                           = "euc1-az1"
+    cidr_block                                     = "10.50.2.0/24"
+    customer_owned_ipv4_pool                       = [90mnull[0m[0m
+    enable_dns64                                   = false
+    enable_lni_at_device_index                     = 0
+    enable_resource_name_dns_a_record_on_launch    = false
+    enable_resource_name_dns_aaaa_record_on_launch = false
+    id                                             = "subnet-05aac71f2d97e505f"
+    ipv6_cidr_block                                = [90mnull[0m[0m
+    ipv6_cidr_block_association_id                 = [90mnull[0m[0m
+    ipv6_native                                    = false
+    map_customer_owned_ip_on_launch                = false
+    map_public_ip_on_launch                        = true
+    outpost_arn                                    = [90mnull[0m[0m
+    owner_id                                       = "132334512300"
+    private_dns_hostname_type_on_launch            = "ip-name"
+    region                                         = "eu-central-1"
+    tags                                           = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-public-2"
+        "Project"     = "super-mario"
+        "Tier"        = "public"
+    }
+    tags_all                                       = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-public-2"
+        "Project"     = "super-mario"
+        "Tier"        = "public"
+    }
+    vpc_id                                         = "vpc-0d53d242cecae3e0c"
+}
+
+# aws_vpc.this:
+resource "aws_vpc" "this" {
+    arn                                  = "arn:aws:ec2:eu-central-1:132334512300:vpc/vpc-0d53d242cecae3e0c"
+    assign_generated_ipv6_cidr_block     = false
+    cidr_block                           = "10.50.0.0/16"
+    default_network_acl_id               = "acl-0cc1d0dee6e201153"
+    default_route_table_id               = "rtb-0605f1210c7b30ccc"
+    default_security_group_id            = "sg-04f57acd049c15443"
+    dhcp_options_id                      = "dopt-03f058c2e09cb7ed5"
+    enable_dns_hostnames                 = true
+    enable_dns_support                   = true
+    enable_network_address_usage_metrics = false
+    id                                   = "vpc-0d53d242cecae3e0c"
+    instance_tenancy                     = "default"
+    ipv6_association_id                  = [90mnull[0m[0m
+    ipv6_cidr_block                      = [90mnull[0m[0m
+    ipv6_cidr_block_network_border_group = [90mnull[0m[0m
+    ipv6_ipam_pool_id                    = [90mnull[0m[0m
+    ipv6_netmask_length                  = 0
+    main_route_table_id                  = "rtb-0605f1210c7b30ccc"
+    owner_id                             = "132334512300"
+    region                               = "eu-central-1"
+    tags                                 = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-vpc"
+        "Project"     = "super-mario"
+    }
+    tags_all                             = {
+        "Environment" = "lab"
+        "ManagedBy"   = "terraform"
+        "Name"        = "supermario-vpc"
+        "Project"     = "super-mario"
+    }
+}
+
+
+Outputs:
+
+instance_id = "i-034719a0cadd04fc8"
+public_ip = "18.196.129.153"
+public_subnet_ids = [
+    "subnet-0bd745669c5eae0ee",
+    "subnet-05aac71f2d97e505f",
+]
+ssm_port_forward_jenkins = "aws ssm start-session --target i-034719a0cadd04fc8 --document-name AWS-StartPortForwardingSession --parameters '{\"portNumber\":[\"8080\"],\"localPortNumber\":[\"8080\"]}'"
+ssm_shell_command = "aws ssm start-session --target i-034719a0cadd04fc8"
+vpc_id = "vpc-0d53d242cecae3e0c"
