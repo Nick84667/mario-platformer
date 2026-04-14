@@ -39,3 +39,12 @@ Thumbs.db
 
 # Claude Code internal
 .claude/
+
+# Terraform local artifacts
+infra/jenkins-ec2/.terraform/
+infra/jenkins-ec2/*.tfstate
+infra/jenkins-ec2/*.tfstate.*
+infra/jenkins-ec2/terraform.tfstate.empty
+
+# Backup files
+*.bak

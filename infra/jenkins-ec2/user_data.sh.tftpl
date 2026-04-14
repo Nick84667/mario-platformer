@@ -1,0 +1,69 @@
+#!/bin/bash
+set -euxo pipefail
+
+exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
+
+export DEBIAN_FRONTEND=noninteractive
+
+apt_get() {
+  apt-get -o DPkg::Lock::Timeout=600 -y "$@"
+}
+
+# Base repo sync
+apt_get update
+
+# Base packages + Java + Docker
+apt_get install \
+  ca-certificates \
+  curl \
+  wget \
+  gnupg \
+  unzip \
+  jq \
+  git \
+  apt-transport-https \
+  software-properties-common \
+  fontconfig \
+  openjdk-21-jre \
+  docker.io
+
+systemctl enable --now docker
+
+# Jenkins official LTS repo
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key \
+  -o /etc/apt/keyrings/jenkins-keyring.asc
+
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" \
+  > /etc/apt/sources.list.d/jenkins.list
+
+apt_get update
+apt_get install jenkins
+
+usermod -aG docker ubuntu || true
+usermod -aG docker jenkins || true
+
+systemctl enable --now jenkins
+
+# Wait until Jenkins creates the initial admin password
+for i in $(seq 1 60); do
+  if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]; then
+    break
+  fi
+  sleep 2
+done
+
+mkdir -p /home/ubuntu/bootstrap-info
+{
+  echo "Jenkins initial admin password:"
+  cat /var/lib/jenkins/secrets/initialAdminPassword
+} > /home/ubuntu/bootstrap-info/README.txt
+
+chown -R ubuntu:ubuntu /home/ubuntu/bootstrap-info
+chmod 644 /home/ubuntu/bootstrap-info/README.txt
+
+docker --version
+java -version
+systemctl status docker --no-pager || true
+systemctl status jenkins --no-pager || true
+``
