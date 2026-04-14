@@ -1,161 +1,58 @@
 # Mario Platformer
 
-A browser-playable 2D platformer inspired by Super Mario, built from scratch with **Next.js 15**, **TypeScript**, **HTML5 Canvas**, and **Zustand**. Zero external assets — all sprites are drawn procedurally and all audio is generated via the Web Audio API.
+Production-style lab repository that validates an end-to-end DevOps workflow on AWS for a browser-playable 2D platformer inspired by classic side-scrolling games.
 
-![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+## Overview
 
+This repository combines:
 
----
+- **Application layer**: a Next.js-based Mario-style browser game
+- **Infrastructure layer**: Terraform module to provision AWS networking and a Jenkins EC2 host
+- **Delivery layer**: Jenkins pipeline to build a Docker image and run the application on EC2
 
-## Features
+The V1 lab has been validated end-to-end with:
 
-- Custom physics engine (AABB tile-based collision, no Matter.js)
-- Procedural sprite rendering — no image files
-- Procedural audio — no audio files (Web Audio API)
-- 2 handcrafted levels with a JSON-based level format
-- Goomba AI (patrol, edge detection, wall bounce)
-- Question blocks, brick breaking, coin collection
-- Stomp combo scoring, floating score popups
-- Side-scrolling lerp camera
-- Mobile touch controls (on-screen D-pad + A/B buttons)
-- Built-in Level Editor (paste JSON → hot-load)
-- 60 FPS stable, minimal React re-renders
+- Terraform **apply**
+- Jenkins + Docker bootstrap on EC2
+- Dockerized application deployment
+- Application health verification
+- Terraform **destroy**
 
----
+## Repository Structure
 
-## Getting Started
+- `infra/jenkins-ec2/` - Terraform module for AWS infrastructure and Jenkins EC2 bootstrap
+- `Dockerfile` - container definition for the Mario application
+- `Jenkinsfile` - Jenkins pipeline for build and deployment
+- `package.json` - Node.js / Next.js application definition
+- `README.md` - project documentation
 
-```bash
-git clone https://github.com/Rahul96A/mario-platformer.git
-cd mario-platformer
-npm install
-npm run dev
-```
+## Tech Stack
 
-Open [http://localhost:3000](http://localhost:3000).
+- **Frontend / App**: Next.js, React, TypeScript
+- **Infrastructure**: Terraform, AWS EC2, VPC, IAM, Security Groups
+- **CI Runtime**: Jenkins, Docker
+- **Access / Ops**: AWS Systems Manager Session Manager
 
----
+## What V1 Validates
 
-## Controls
+- Provisioning of a dedicated AWS lab environment with Terraform
+- Automated installation of Jenkins and Docker on EC2
+- Build and deployment of the Mario application as a Docker container
+- Secure access to Jenkins and application endpoints through restricted Security Group rules
+- Clean teardown of all provisioned infrastructure with Terraform destroy
 
-| Action | Keys |
-|--------|------|
-| Move   | `← →` / `A D` |
-| Jump   | `Space` / `↑` / `W` |
-| Run    | `Shift` / `Z` |
-| Pause  | `P` / `Esc` |
-| Start  | `Enter` |
+## Application Endpoints
 
-Mobile users get on-screen buttons automatically.
+When the lab is provisioned:
 
----
+- **Jenkins UI**: `http://<ec2-public-ip>:8080`
+- **Mario App**: `http://<ec2-public-ip>:3000`
 
-## Architecture
+## Quick Start
 
-```
-/app               Next.js App Router pages & layout
-/components
-  /canvas          GameCanvas — canvas host + overlay compositor
-  /ui              HUD, menus, touch controls, level editor
-/engine
-  GameEngine.ts    Orchestrator — owns all mutable game state
-  Physics.ts       Tile-based AABB physics + collision resolution
-  Camera.ts        Side-scrolling camera (lerp + clamped bounds)
-  Renderer.ts      All Canvas 2D draw calls (procedural sprites)
-  InputManager.ts  Keyboard + virtual touch input
-  AudioManager.ts  Web Audio API — procedural sound effects
-/entities
-  types.ts         Shared interfaces & enums
-  Player.ts        Movement, jump, invincibility
-  Enemy.ts         Goomba patrol AI, stomp / knockback
-  Particle.ts      Particle system + floating score popups
-/hooks
-  useGame.ts       Bootstraps engine, bridges Zustand store
-/levels
-  types.ts         LevelDef schema
-  level1.json      World 1-1
-  level2.json      World 1-2
-  LevelLoader.ts   JSON → Uint8Array tile grid + entity arrays
-/store
-  gameStore.ts     Zustand — score, lives, coins, game status
-/utils
-  constants.ts     Physics, camera, scoring constants
-  math.ts          clamp, lerp, AABB helpers
-  colors.ts        Centralised colour palette
-```
-
-### Key design decisions
-
-| Concern | Approach |
-|---------|---------|
-| Rendering | Fixed 800×450 virtual resolution scaled to viewport |
-| Game loop | `requestAnimationFrame` with delta-time capped at 50 ms |
-| Physics | Custom — separate X / Y collision passes |
-| State | Engine owns all mutable state; Zustand is UI-only (overlays) |
-| React isolation | Canvas never touched by React |
-
----
-
-## Level Format
-
-```json
-{
-  "id": 1,
-  "name": "My Level",
-  "width": 60,
-  "height": 14,
-  "background": "day",
-  "timeLimit": 300,
-  "playerStart": { "col": 3, "row": 12 },
-  "goal":        { "col": 55, "row": 12 },
-  "regions": [
-    { "col": 0, "row": 12, "w": 60, "h": 2, "type": 1 }
-  ],
-  "blocks":  [{ "col": 10, "row": 8, "type": "question", "coin": true }],
-  "pipes":   [{ "col": 20, "row": 12, "height": 2 }],
-  "enemies": [{ "type": "goomba", "col": 15, "row": 12 }],
-  "coins":   [{ "col": 8, "row": 10 }]
-}
-```
-
-**Tile types**: `0` Air · `1` Ground · `2` Brick · `3` Question block · `5` Pipe top · `6` Pipe body
-
-Use the in-game **Level Editor** (🗺 button) to paste and hot-load custom JSON instantly.
-
----
-
-## Adding a New Level
-
-1. Create `levels/level3.json` following the schema above.
-2. Import and register it in `hooks/useGame.ts`:
-
-```ts
-import level3 from "@/levels/level3.json";
-const LEVEL_DEFS = [level1, level2, level3] as LevelDef[];
-```
-
----
-
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Development server with hot reload |
-| `npm run build` | Production build |
-| `npm start` | Serve the production build |
-| `npm run lint` | ESLint check |
-
----
-
-## Deployment
-
-Deploys as a fully-static Next.js app — no server required.
-
-```bash
-vercel deploy
-```
-
----
+### Provision infrastructure
 
 
+cd infra/jenkins-ec2
+terraform init
+terraform apply -var-file=terraform.tfvars
