@@ -44,11 +44,14 @@ export function updatePlayer(
   }
 
   // ── Jump ───────────────────────────────────────────────────────────────────
+    
   if (input.isPressed("jump") && p.onGround) {
     p.vy = JUMP_FORCE;
+    p.onGround = false;
     p.jumpHeld = true;
     p.jumpHeldFrames = 0;
   }
+
 
   // Variable jump height – hold to float longer
   if (p.jumpHeld) {

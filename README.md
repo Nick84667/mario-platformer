@@ -158,6 +158,4 @@ vercel deploy
 
 ---
 
-## License
 
-[MIT](LICENSE) © 2025 Rahul96A
