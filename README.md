@@ -4,7 +4,7 @@ A browser-playable 2D platformer inspired by Super Mario, built from scratch wit
 
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
-![License](https://img.shields.io/badge/license-MIT-green)
+
 
 ---
 
