@@ -71,7 +71,7 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_security_group" "jenkins" {
   name        = "${var.name_prefix}-jenkins-sg"
-  description = "Zero-inbound SG for Jenkins EC2 managed through SSM"
+  description = "Restricted inbound SG for Jenkins UI and Mario app from admin CIDR"
   vpc_id      = aws_vpc.this.id
 
   ingress {

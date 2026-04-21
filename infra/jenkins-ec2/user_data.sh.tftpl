@@ -2,51 +2,93 @@
 set -euxo pipefail
 
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
-
 export DEBIAN_FRONTEND=noninteractive
 
-apt_get() {
-  apt-get -o DPkg::Lock::Timeout=600 -y "$@"
-}
-
-# Base repo sync
-apt_get update
-
-# Base packages + Java + Docker
-apt_get install \
+apt-get update
+apt-get install -y \
   ca-certificates \
   curl \
-  wget \
-  gnupg \
   unzip \
-  jq \
-  git \
+  gnupg \
+  wget \
+  lsb-release \
   apt-transport-https \
   software-properties-common \
-  fontconfig \
-  openjdk-21-jre \
-  docker.io
+  openjdk-21-jre-headless
+
+# ------------------------------------------------------------
+# Docker
+# ------------------------------------------------------------
+install -m 0755 -d /etc/apt/keyrings
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+  gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+  > /etc/apt/sources.list.d/docker.list
+
+apt-get update
+apt-get install -y \
+  docker-ce \
+  docker-ce-cli \
+  containerd.io \
+  docker-buildx-plugin \
+  docker-compose-plugin
 
 systemctl enable --now docker
+usermod -aG docker ubuntu || true
 
-# Jenkins official LTS repo
-install -m 0755 -d /etc/apt/keyrings
+# ------------------------------------------------------------
+# AWS CLI v2
+# ------------------------------------------------------------
+cd /tmp
+curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+unzip -o awscliv2.zip
+./aws/install --update
+
+# ------------------------------------------------------------
+# Trivy
+# ------------------------------------------------------------
+curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | \
+  gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+
+chmod a+r /usr/share/keyrings/trivy.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" \
+  > /etc/apt/sources.list.d/trivy.list
+
+apt-get update
+apt-get install -y trivy
+
+# ------------------------------------------------------------
+# Jenkins
+# ------------------------------------------------------------
+
+mkdir -p /etc/apt/keyrings
+rm -f /etc/apt/sources.list.d/jenkins.list /etc/apt/keyrings/jenkins-keyring.asc
+
 curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key \
-  -o /etc/apt/keyrings/jenkins-keyring.asc
+  > /etc/apt/keyrings/jenkins-keyring.asc
+
+chmod 644 /etc/apt/keyrings/jenkins-keyring.asc
 
 echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" \
   > /etc/apt/sources.list.d/jenkins.list
 
-apt_get update
-apt_get install jenkins
+apt-get update
+apt-get install -y fontconfig openjdk-21-jre jenkins
 
-usermod -aG docker ubuntu || true
 usermod -aG docker jenkins || true
-
 systemctl enable --now jenkins
+systemctl restart jenkins
 
-# Wait until Jenkins creates the initial admin password
-for i in $(seq 1 60); do
+
+# ------------------------------------------------------------
+# Wait for Jenkins initial admin password
+# ------------------------------------------------------------
+for i in $(seq 1 90); do
   if [ -f /var/lib/jenkins/secrets/initialAdminPassword ]; then
     break
   fi
@@ -54,16 +96,20 @@ for i in $(seq 1 60); do
 done
 
 mkdir -p /home/ubuntu/bootstrap-info
+
 {
   echo "Jenkins initial admin password:"
-  cat /var/lib/jenkins/secrets/initialAdminPassword
+  cat /var/lib/jenkins/secrets/initialAdminPassword || true
+  echo
+  echo "Docker version:"
+  docker --version || true
+  echo
+  echo "AWS CLI version:"
+  aws --version || true
+  echo
+  echo "Trivy version:"
+  trivy --version || true
 } > /home/ubuntu/bootstrap-info/README.txt
 
 chown -R ubuntu:ubuntu /home/ubuntu/bootstrap-info
 chmod 644 /home/ubuntu/bootstrap-info/README.txt
-
-docker --version
-java -version
-systemctl status docker --no-pager || true
-systemctl status jenkins --no-pager || true
-``

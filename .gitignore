@@ -1,50 +1,40 @@
-# Dependencies
+# Node / Next
 node_modules/
-
-# Next.js build output
 .next/
 out/
-
-# Production build
-build/
 dist/
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Debug logs
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# OS files
+# Env
+.env
+.env.*
+!.env.example
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# tfvars (se vuoi evitare di versionare dati ambientali reali)
+terraform.tfvars
+*.auto.tfvars
+
+# OS / editors
 .DS_Store
 Thumbs.db
-
-# Editor directories
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# TypeScript
-*.tsbuildinfo
-
-# Vercel
-.vercel
-
-# Claude Code internal
-.claude/
-
-# Terraform local artifacts
-infra/jenkins-ec2/.terraform/
-infra/jenkins-ec2/*.tfstate
-infra/jenkins-ec2/*.tfstate.*
-infra/jenkins-ec2/terraform.tfstate.empty
-
-# Backup files
+# Temp / backup
 *.bak
+*.tmp
+last-show.txt
