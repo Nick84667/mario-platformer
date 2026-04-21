@@ -12,19 +12,19 @@ This repository combines three main layers:
 - **Infrastructure layer**: Terraform code to provision AWS networking, IAM, an EC2 Jenkins host, and an Amazon ECR repository
 - **CI layer**: a Jenkins pipeline that builds the application container image, scans it with Trivy, and publishes versioned images to Amazon ECR
 
-The project started as a validated **V1 lab** where Jenkins built and ran the container locally on EC2.  
-It is now evolving toward a more enterprise-oriented **V2 model** in which Jenkins acts as a CI engine that produces container artifacts for downstream deployment workflows.
+The project started as a validated **V1 lab**, where Jenkins built and ran the container locally on EC2.  
+It has now evolved into a **V2 model**, where Jenkins acts as a CI engine that produces versioned container artifacts for Amazon ECR and future deployment workflows.
 
 ---
 
 ## Objectives
 
 - Provision a reproducible AWS lab environment with Terraform
-- Bootstrap Jenkins and Docker on an EC2 instance
+- Bootstrap Jenkins, Docker, AWS CLI, Node.js, and Trivy on an EC2 instance
 - Package a Next.js browser game as a Docker image
 - Run CI quality checks before image publication
 - Scan container images for vulnerabilities with Trivy
-- Push versioned images to Amazon ECR
+- Publish versioned images to Amazon ECR
 - Prepare the repository for future CD / GitOps integration
 
 ---
@@ -57,47 +57,44 @@ It is now evolving toward a more enterprise-oriented **V2 model** in which Jenki
 
 
 
-├── app/
-├── components/
-├── engine/
-├── entities/
-├── hooks/
-├── levels/
-├── store/
-├── utils/
+├── app/                        # Next.js App Router entrypoints
+├── components/                 # UI and game canvas components
+├── engine/                     # Core game engine logic
+├── entities/                   # Game domain entities
+├── hooks/                      # Custom React hooks
+├── levels/                     # Level definitions and loading logic
+├── store/                      # Zustand store
+├── utils/                      # Shared utilities and constants
 ├── infra/
 │   └── jenkins-ec2/
-│       ├── ecr.tf
-│       ├── iam_ecr.tf
-│       ├── main.tf
-│       ├── outputs.tf
-│       ├── user_data.sh.tftpl
-│       ├── variables.tf
-│       └── versions.tf
-├── Dockerfile
-├── Jenkinsfile
-├── package.json
-├── package-lock.json
-└── README.md
+│       ├── main.tf             # Core AWS infrastructure
+│       ├── ecr.tf              # Amazon ECR repository and lifecycle policy
+│       ├── iam_ecr.tf          # IAM policy/attachment for ECR access
+│       ├── outputs.tf          # Terraform outputs
+│       ├── variables.tf        # Terraform variables
+│       ├── versions.tf         # Terraform/provider version constraints
+│       └── user_data.sh.tftpl  # EC2 bootstrap script for Jenkins host
+├── Dockerfile                  # Container image definition
+├── Jenkinsfile                 # CI pipeline definition
+├── package.json                # Node.js / Next.js project definition
+├── package-lock.json           # Dependency lock file
+├── next.config.ts              # Next.js configuration
+└── README.md                   # Project documentation
 
 
 Architecture
-
 Application Layer
-
 A browser-playable Mario-inspired 2D platformer built with Next.js, React, and TypeScript.
-
 Infrastructure Layer
-
 Terraform provisions:
 
-- dedicated VPC
-- public subnets
-- internet gateway and route table
-- Jenkins EC2 instance
-- IAM role and instance profile
-- security group restricted to the admin CIDR
-- Amazon ECR repository for container image publication
+a dedicated VPC
+public subnets
+internet gateway and route table
+a Jenkins EC2 instance
+an IAM role and instance profile
+a security group restricted to the admin CIDR
+an Amazon ECR repository for container image publication
 
 CI Layer
 Jenkins is used as the CI engine to:
@@ -118,7 +115,7 @@ an optional latest tag for lab convenience
 
 
 Validation Status
-V1 — Fully Validated
+V1 - Fully Validated
 The following V1 workflow has been validated end-to-end:
 
 Terraform apply
@@ -128,8 +125,8 @@ Local container deployment on the Jenkins EC2 host
 Application health verification
 Terraform destroy
 
-V2 — Host and CI Prerequisites Validated
-The following V2 prerequisites are now validated:
+V2 - Successfully Validated
+The following V2 workflow has now been validated successfully:
 
 Amazon ECR repository provisioned with Terraform
 ECR lifecycle policy configured
@@ -140,6 +137,7 @@ Jenkins EC2 host configured with:
 Jenkins
 Docker
 AWS CLI
+Node.js / npm
 Trivy
 
 
@@ -150,8 +148,17 @@ AWS role resolution
 Amazon ECR authentication
 
 
+Jenkins pipeline validated for:
 
-The next validation step is the first successful Jenkins pipeline run that publishes the Mario Platformer image to Amazon ECR.
+source checkout
+image build
+Trivy scan
+ECR authentication
+image tagging
+successful image publication to Amazon ECR
+
+
+
 
 AWS Resources
 Network
@@ -168,6 +175,7 @@ Jenkins EC2 instance with:
 Docker
 Jenkins
 AWS CLI
+Node.js / npm
 Trivy
 
 
@@ -203,6 +211,7 @@ Preflight checks
 Docker
 AWS CLI
 Trivy
+Node.js / npm
 
 
 Quality gates
@@ -239,94 +248,85 @@ ecr_repository_url
 
 Example:
 
+
 ecr_repository_name = "supermario-mario-platformer"
 ecr_repository_url  = "132334512300.dkr.ecr.eu-central-1.amazonaws.com/supermario-mario-platformer"
 
+
 1. Provision infrastructure
+
 
 cd infra/jenkins-ec2
 terraform init
 terraform apply -var-file=terraform.tfvars
 
+
 2. Access the Jenkins host with SSM
+
 
 aws ssm start-session --target <instance-id>
 
+
 3. Optional: port-forward Jenkins locally
+
 
 aws ssm start-session \
   --target <instance-id> \
   --document-name AWS-StartPortForwardingSession \
   --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'
+  
+ Then open: http://localhost:8080
 
-Then open:http://localhost:8080
+
 
 4. Run the Jenkins pipeline
-The V2 pipeline should:
+The V2 pipeline:
 
-build the image
-scan it with Trivy
-push it to Amazon ECR
+builds the image
+scans it with Trivy
+authenticates to Amazon ECR
+pushes versioned image tags to ECR
+
+
 
 5. Verify ECR publication
 
 aws ecr describe-images \
   --repository-name supermario-mario-platformer \
   --region eu-central-1
+  
+  
+6. Destroy infrastructure when finished 
 
-6. Destroy infrastructure when finished
 terraform destroy -var-file=terraform.tfvars
-
 
 
 Operational Notes
 
 The Jenkins EC2 instance is intended to act as a CI engine, not as the final runtime target for production deployment.
-The published container image is the main output of the V2 workflow.
-Future delivery stages can consume the ECR image from ECS, EKS, or a GitOps-driven deployment workflow.
+The published container image is the primary output of the V2 workflow.
+Future delivery stages can consume the ECR image from ECS, EKS, or a GitOps-driven deployment model.
 
 
 Roadmap
 Planned next steps include:
 
-Final V2 validation with successful image publication to ECR
-Improved Docker image optimization with Next.js standalone output
-Additional quality gates such as TypeScript type checking
-SonarQube integration
-Environment promotion strategy (dev / stage / prod)
-CD integration using ECS, EKS, or ArgoCD
-GitOps-based deployment model
-Secrets management improvements
+Harden Trivy policy after image/runtime optimization
+Improve Docker image optimization with Next.js standalone output
+Add TypeScript type checking as an additional CI quality gate
+Integrate SonarQube
+Introduce environment promotion strategy (dev / stage / prod)
+Add CD integration using ECS, EKS, or ArgoCD
+Evolve toward a GitOps-based deployment model
+Improve secrets management and credential handling
 
-## Validation Status
-
-### V1 — Fully Validated
-
-The following V1 workflow has been validated end-to-end:
-
-- Terraform apply
-- Jenkins + Docker bootstrap on EC2
-- Local Docker image build
-- Local container deployment on the Jenkins EC2 host
-- Application health verification
-- Terraform destroy
-
-### V2 — Successfully Validated
-
-The following V2 workflow has now been validated successfully:
-
-- Amazon ECR repository provisioned with Terraform
-- ECR lifecycle policy configured
-- ECR image scanning on push enabled
-- IAM policy attached to the Jenkins EC2 role for ECR authentication and image push
-- Jenkins
 
 This repository is intentionally built as more than a simple game demo.
 It demonstrates how to evolve a small web application into a production-style DevOps workflow by combining:
 
 infrastructure as code
 containerization
-CI security checks
+CI quality and security checks
 artifact publication
 AWS-native registry integration
 
