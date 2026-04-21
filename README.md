@@ -298,6 +298,29 @@ CD integration using ECS, EKS, or ArgoCD
 GitOps-based deployment model
 Secrets management improvements
 
+## Validation Status
+
+### V1 — Fully Validated
+
+The following V1 workflow has been validated end-to-end:
+
+- Terraform apply
+- Jenkins + Docker bootstrap on EC2
+- Local Docker image build
+- Local container deployment on the Jenkins EC2 host
+- Application health verification
+- Terraform destroy
+
+### V2 — Successfully Validated
+
+The following V2 workflow has now been validated successfully:
+
+- Amazon ECR repository provisioned with Terraform
+- ECR lifecycle policy configured
+- ECR image scanning on push enabled
+- IAM policy attached to the Jenkins EC2 role for ECR authentication and image push
+- Jenkins
+
 This repository is intentionally built as more than a simple game demo.
 It demonstrates how to evolve a small web application into a production-style DevOps workflow by combining:
 
