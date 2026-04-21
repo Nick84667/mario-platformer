@@ -1,15 +1,24 @@
 "use client";
 
-import { useGameStore, selectHUD } from "@/store/gameStore";
+import { useGameStore } from "@/store/gameStore";
 
 export function HUD() {
-  const { score, lives, coins, level, timeLeft, highScore } = useGameStore(selectHUD);
+  const score = useGameStore((s) => s.score);
+  const lives = useGameStore((s) => s.lives);
+  const coins = useGameStore((s) => s.coins);
+  const level = useGameStore((s) => s.level);
+  const timeLeft = useGameStore((s) => s.timeLeft);
+  const highScore = useGameStore((s) => s.highScore);
 
   return (
     <div className="absolute inset-x-0 top-0 pointer-events-none z-10">
       <div
         className="flex justify-between items-start px-4 py-2 text-white"
-        style={{ fontFamily: "'Press Start 2P', monospace", fontSize: "11px", textShadow: "1px 1px 0 #000, 2px 2px 0 #000" }}
+        style={{
+          fontFamily: "'Press Start 2P', monospace",
+          fontSize: "11px",
+          textShadow: "1px 1px 0 #000, 2px 2px 0 #000",
+        }}
       >
         {/* Score */}
         <div className="flex flex-col gap-1">
@@ -34,7 +43,9 @@ export function HUD() {
         {/* Lives */}
         <div className="flex flex-col gap-1 items-center">
           <span className="opacity-80">LIVES</span>
-          <span style={{ color: "#ff6b6b" }}>{"♥ ".repeat(Math.max(0, lives)).trim()}</span>
+          <span style={{ color: "#ff6b6b" }}>
+            {"♥ ".repeat(Math.max(0, lives)).trim()}
+          </span>
         </div>
 
         {/* Time */}
@@ -48,7 +59,9 @@ export function HUD() {
         {/* High Score */}
         <div className="flex flex-col gap-1 items-end">
           <span className="opacity-80">HI-SCORE</span>
-          <span style={{ color: "#fbd000" }}>{String(highScore).padStart(6, "0")}</span>
+          <span style={{ color: "#fbd000" }}>
+            {String(highScore).padStart(6, "0")}
+          </span>
         </div>
       </div>
     </div>

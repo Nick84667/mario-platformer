@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.gitignore
+npm-debug.log
+Dockerfile
+Jenkinsfile
+infra/jenkins-ec2/.terraform
+infra/jenkins-ec2/*.tfstate
+infra/jenkins-ec2/*.tfstate.*
+*.bak

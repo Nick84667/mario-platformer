@@ -42,23 +42,32 @@ const KEY_MAP: Record<string, InputKey> = {
 };
 
 export class InputManager {
+  /** Final merged state for the current frame */
   private current: InputState = BLANK_STATE();
+
+  /** Final merged state for the previous frame */
   private previous: InputState = BLANK_STATE();
 
-  // Touch overrides – set externally by TouchControls component
-  private touchState: Partial<InputState> = {};
+  /** Raw keyboard state updated directly by DOM events */
+  private keyboardState: InputState = BLANK_STATE();
+
+  /** Raw touch state injected externally */
+  private touchState: InputState = BLANK_STATE();
 
   private onKeyDown = (e: KeyboardEvent): void => {
     const key = KEY_MAP[e.code];
     if (key) {
       e.preventDefault();
-      this.current[key] = true;
+      this.keyboardState[key] = true;
     }
   };
 
   private onKeyUp = (e: KeyboardEvent): void => {
     const key = KEY_MAP[e.code];
-    if (key) this.current[key] = false;
+    if (key) {
+      e.preventDefault();
+      this.keyboardState[key] = false;
+    }
   };
 
   attach(): void {
@@ -69,20 +78,29 @@ export class InputManager {
   detach(): void {
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
+
     this.current = BLANK_STATE();
     this.previous = BLANK_STATE();
-    this.touchState = {};
+    this.keyboardState = BLANK_STATE();
+    this.touchState = BLANK_STATE();
   }
 
-  /** Called once per frame at the start of update – snapshots previous state. */
+  /**
+   * Called once per frame at the start of update.
+   * 1) Save previous frame
+   * 2) Rebuild current frame from keyboard + touch
+   */
   update(): void {
     this.previous = { ...this.current };
 
-    // Merge touch overrides
-    for (const k in this.touchState) {
-      const key = k as InputKey;
-      if (this.touchState[key]) this.current[key] = true;
-    }
+    this.current = {
+      left: this.keyboardState.left || this.touchState.left,
+      right: this.keyboardState.right || this.touchState.right,
+      jump: this.keyboardState.jump || this.touchState.jump,
+      run: this.keyboardState.run || this.touchState.run,
+      pause: this.keyboardState.pause || this.touchState.pause,
+      start: this.keyboardState.start || this.touchState.start,
+    };
   }
 
   /** True every frame while the key is held. */
@@ -103,17 +121,14 @@ export class InputManager {
   /** Called by TouchControls to inject virtual button state. */
   setTouch(key: InputKey, value: boolean): void {
     this.touchState[key] = value;
-    if (value) this.current[key] = true;
-    else {
-      // Only clear if not also held on keyboard
-      this.touchState[key] = false;
-    }
   }
 
   /** Clear all input – useful when entering/leaving pause. */
   flush(): void {
     this.current = BLANK_STATE();
     this.previous = BLANK_STATE();
-    this.touchState = {};
+    this.keyboardState = BLANK_STATE();
+    this.touchState = BLANK_STATE();
   }
 }
+``
