@@ -5,88 +5,164 @@ pipeline {
     skipDefaultCheckout(true)
     disableConcurrentBuilds()
     buildDiscarder(logRotator(numToKeepStr: '10'))
-    timeout(time: 20, unit: 'MINUTES')
+    timeout(time: 30, unit: 'MINUTES')
   }
 
   environment {
-    IMAGE_NAME     = 'mario-platformer'
-    CONTAINER_NAME = 'mario'
-    APP_PORT       = '3000'
+    IMAGE_NAME      = 'mario-platformer'
+    AWS_REGION      = 'eu-central-1'
+    ECR_REPOSITORY  = 'supermario-mario-platformer'
+    DOCKER_BUILDKIT = '1'
   }
 
   stages {
     stage('Checkout') {
       steps {
         checkout scm
-        sh 'git rev-parse --short HEAD || true'
+        script {
+          env.GIT_SHA_SHORT = sh(
+            returnStdout: true,
+            script: 'git rev-parse --short=8 HEAD'
+          ).trim()
+        }
+      }
+    }
+
+    stage('Resolve AWS / Image Metadata') {
+      steps {
+        script {
+          env.AWS_ACCOUNT_ID = sh(
+            returnStdout: true,
+            script: 'aws sts get-caller-identity --query Account --output text'
+          ).trim()
+
+          env.ECR_REGISTRY = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com"
+          env.IMAGE_URI    = "${env.ECR_REGISTRY}/${env.ECR_REPOSITORY}"
+        }
+
+        sh '''
+          echo "GIT_SHA_SHORT=${GIT_SHA_SHORT}"
+          echo "ECR_REGISTRY=${ECR_REGISTRY}"
+          echo "IMAGE_URI=${IMAGE_URI}"
+        '''
       }
     }
 
     stage('Preflight') {
       steps {
-        sh 'docker version'
+        sh '''#!/bin/bash
+          set -euo pipefail
+          docker version
+          aws --version
+          trivy --version
+        '''
+      }
+    }
+
+    stage('Quality Gates') {
+      steps {
+        sh '''#!/bin/bash
+          set -euo pipefail
+          npm ci
+          npm run lint
+          npm run build
+        '''
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        sh '''
-          docker build \
+        sh '''#!/bin/bash
+          set -euo pipefail
+
+          docker build --pull \
             -t ${IMAGE_NAME}:${BUILD_NUMBER} \
+            -t ${IMAGE_NAME}:${GIT_SHA_SHORT} \
             -t ${IMAGE_NAME}:latest \
             .
         '''
       }
     }
 
-    stage('Stop Previous Container') {
+    stage('Scan Image with Trivy') {
       steps {
-        sh 'docker rm -f ${CONTAINER_NAME} || true'
-      }
-    }
+        sh '''#!/bin/bash
+          set -euo pipefail
 
-    stage('Run Mario Container') {
-      steps {
-        sh '''
-          docker run -d \
-            --name ${CONTAINER_NAME} \
-            --restart unless-stopped \
-            -p ${APP_PORT}:${APP_PORT} \
-            ${IMAGE_NAME}:${BUILD_NUMBER}
+          trivy image \
+            --no-progress \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format table \
+            ${IMAGE_NAME}:${BUILD_NUMBER} | tee trivy-report.txt
         '''
       }
     }
 
-    stage('Verify Mario') {
+    stage('Login to ECR') {
       steps {
-        script {
-          retry(6) {
-            sh 'sleep 5'
-            sh 'curl -fsSI http://localhost:${APP_PORT}'
-          }
-        }
+        sh '''#!/bin/bash
+          set -euo pipefail
+
+          aws ecr get-login-password --region ${AWS_REGION} | \
+            docker login --username AWS --password-stdin ${ECR_REGISTRY}
+        '''
       }
     }
 
-    stage('Cleanup Dangling Images') {
+    stage('Tag and Push Image') {
       steps {
-        sh 'docker image prune -f || true'
+        sh '''#!/bin/bash
+          set -euo pipefail
+
+          docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_URI}:${BUILD_NUMBER}
+          docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_URI}:${GIT_SHA_SHORT}
+          docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_URI}:latest
+
+          docker push ${IMAGE_URI}:${BUILD_NUMBER}
+          docker push ${IMAGE_URI}:${GIT_SHA_SHORT}
+          docker push ${IMAGE_URI}:latest
+        '''
+      }
+    }
+
+    stage('Publish Metadata') {
+      steps {
+        writeFile file: 'image-metadata.txt', text: """IMAGE_URI=${env.IMAGE_URI}
+BUILD_NUMBER=${env.BUILD_NUMBER}
+GIT_SHA_SHORT=${env.GIT_SHA_SHORT}
+AWS_REGION=${env.AWS_REGION}
+"""
+        archiveArtifacts artifacts: 'trivy-report.txt,image-metadata.txt', fingerprint: true
+      }
+    }
+
+    stage('Cleanup Local Images') {
+      steps {
+        sh '''#!/bin/bash
+          set +e
+          docker image prune -f
+        '''
       }
     }
   }
 
   post {
     success {
-      echo "Mario deployed successfully on http://18.196.129.153:3000"
+      echo "Image published successfully: ${env.IMAGE_URI}:${env.BUILD_NUMBER}"
+      echo "Also tagged as: ${env.IMAGE_URI}:${env.GIT_SHA_SHORT} and ${env.IMAGE_URI}:latest"
     }
 
     failure {
-      sh 'docker logs ${CONTAINER_NAME} --tail=200 || true'
-      sh 'docker ps -a || true'
+      sh '''#!/bin/bash
+        set +e
+        echo "Build failed. Showing local images:"
+        docker images | head -n 30
+      '''
     }
 
     always {
-      sh 'docker ps -a --filter name=${CONTAINER_NAME} || true'
+      deleteDir()
     }
   }
 }
