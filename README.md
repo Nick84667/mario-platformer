@@ -55,8 +55,8 @@ It has now evolved into a **V2 model**, where Jenkins acts as a CI engine that p
 
 ## Repository Structure
 
-
-
+```text
+.
 ├── app/                        # Next.js App Router entrypoints
 ├── components/                 # UI and game canvas components
 ├── engine/                     # Core game engine logic
@@ -79,7 +79,7 @@ It has now evolved into a **V2 model**, where Jenkins acts as a CI engine that p
 ├── package.json                # Node.js / Next.js project definition
 ├── package-lock.json           # Dependency lock file
 ├── next.config.ts              # Next.js configuration
-└── README.md                   # Project documentation
+└── README.md                   # Project documentatio
 
 
 Architecture
@@ -274,7 +274,7 @@ aws ssm start-session \
   --target <instance-id> \
   --document-name AWS-StartPortForwardingSession \
   --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'
-  
+
  Then open: http://localhost:8080
 
 
@@ -294,11 +294,12 @@ pushes versioned image tags to ECR
 aws ecr describe-images \
   --repository-name supermario-mario-platformer \
   --region eu-central-1
-  
-  
-6. Destroy infrastructure when finished 
+
+
+6. Destroy infrastructure when finished
 
 terraform destroy -var-file=terraform.tfvars
+
 
 
 Operational Notes
@@ -319,6 +320,7 @@ Introduce environment promotion strategy (dev / stage / prod)
 Add CD integration using ECS, EKS, or ArgoCD
 Evolve toward a GitOps-based deployment model
 Improve secrets management and credential handling
+
 
 
 This repository is intentionally built as more than a simple game demo.
