@@ -1,260 +1,335 @@
 # Mario Platformer
 
-An enterprise-style browser platformer project inspired by classic 2D side-scrolling games, built to demonstrate not only application development, but also a modern **CI/CD + GitOps delivery architecture** using **Jenkins**, **Docker**, **Amazon ECR**, and **Argo CD**.
-
-This repository evolves from a local/browser game implementation into a structured cloud-native delivery lab, where every application change can flow through a complete pipeline:
-
-**Code change → Build → Container image → Registry → GitOps update → Kubernetes sync**
+Production-style DevOps lab repository that demonstrates how to build, secure, and package a browser-playable 2D platformer on AWS using Terraform, Jenkins, Docker, Trivy, and Amazon ECR.
 
 ---
 
 ## Overview
 
-`mario-platformer` started as a browser-playable 2D platformer built with modern frontend technologies.  
-The project is being progressively transformed into an **enterprise delivery showcase**, where the application is used as a realistic workload to demonstrate:
+This repository combines three main layers:
 
-- application versioning
-- containerization best practices
-- CI automation with Jenkins
-- image publishing to a container registry
-- GitOps-based deployment flow
-- Kubernetes continuous delivery with Argo CD
+- **Application layer**: a Next.js-based Mario-style browser game
+- **Infrastructure layer**: Terraform code to provision AWS networking, IAM, an EC2 Jenkins host, and an Amazon ECR repository
+- **CI layer**: a Jenkins pipeline that builds the application container image, scans it with Trivy, and publishes versioned images to Amazon ECR
 
-The core idea is simple but effective:
-
-make a visible change in the game (for example, changing Mario’s outfit color), build a new image through Jenkins, publish it to a registry, update the deployment manifests, and let Argo CD synchronize the cluster automatically.
-
-This makes the project useful both as:
-- a **technical portfolio repository**
-- a **hands-on DevOps lab**
-- a **GitOps reference implementation**
+The project started as a validated **V1 lab**, where Jenkins built and ran the container locally on EC2.  
+It has now evolved into a **V2 model**, where Jenkins acts as a CI engine that produces versioned container artifacts for Amazon ECR and future deployment workflows.
 
 ---
 
-## Architecture
+## Objectives
 
-The project is structured around two complementary layers:
-
-### 1. Application Layer
-The application layer contains the actual game source code and frontend logic.
-
-Main responsibilities:
-- gameplay logic
-- UI and assets
-- browser rendering
-- local development workflow
-- Docker image build context
-
-### 2. Delivery Layer
-The delivery layer contains the infrastructure and automation components required to build, publish, and deploy the application in an enterprise-like environment.
-
-Main responsibilities:
-- Terraform-managed cloud resources
-- Jenkins CI pipeline
-- Docker image build and tagging
-- container registry integration
-- GitOps deployment flow
-- Argo CD synchronization into Kubernetes
-
-### High-Level Components
-
-- **Frontend App**  
-  Browser-based Mario-style 2D platformer
-
-- **Docker**  
-  Packages the application into a deployable container image
-
-- **Jenkins**  
-  Executes the CI pipeline:
-  - checkout
-  - build
-  - image tagging
-  - image push
-  - GitOps manifest update
-
-- **Amazon ECR**  
-  Stores versioned container images for deployment
-
-- **GitOps Repository / Deployment Manifests**  
-  Stores the desired deployment state (image tag, manifests, overlays, Helm/Kustomize configuration)
-
-- **Argo CD**  
-  Watches the GitOps source of truth and reconciles the Kubernetes cluster to the desired state
-
-- **Kubernetes Cluster**  
-  Runs the deployed application
+- Provision a reproducible AWS lab environment with Terraform
+- Bootstrap Jenkins, Docker, AWS CLI, Node.js, and Trivy on an EC2 instance
+- Package a Next.js browser game as a Docker image
+- Run CI quality checks before image publication
+- Scan container images for vulnerabilities with Trivy
+- Publish versioned images to Amazon ECR
+- Prepare the repository for future CD / GitOps integration
 
 ---
 
-## CI/CD Flow
+## Tech Stack
 
-The target enterprise workflow is designed as follows:
+### Application
+- Next.js
+- React
+- TypeScript
+- Zustand
 
-1. A developer pushes a change to the application source code  
-   Example: update UI assets or change Mario’s outfit color
+### Infrastructure
+- Terraform
+- AWS EC2
+- Amazon VPC
+- IAM
+- Security Groups
+- Amazon ECR
 
-2. Jenkins detects the change and starts the CI pipeline
-
-3. Jenkins builds the application container image
-
-4. Jenkins tags the image using a versioning strategy such as:
-   - latest
-   - build-number
-   - short-sha
-   - buildNumber-shortSha
-
-5. Jenkins pushes the image to the configured container registry
-
-6. Jenkins updates the deployment manifest or values file in the GitOps layer  
-   Example:
-   - Helm values.yaml
-   - Kustomize image tag
-   - environment-specific deployment configuration
-
-7. Argo CD detects that Git no longer matches the live cluster state
-
-8. Argo CD synchronizes the Kubernetes cluster
-
-9. The updated application version is deployed automatically
-
-This separates responsibilities clearly:
-
-- **Jenkins = Continuous Integration**
-- **Registry = Artifact Storage**
-- **Git = Source of Truth**
-- **Argo CD = Continuous Delivery / Reconciliation**
-
----
-
-## Jenkins / ECR / ArgoCD
-
-### Jenkins
-Jenkins is used as the CI engine and pipeline orchestrator.
-
-Its responsibilities include:
-- source checkout
-- build automation
-- Docker image creation
-- immutable tagging
-- push to registry
-- update of deployment descriptors in the GitOps flow
-
-The pipeline is defined as code using a Jenkinsfile, making the delivery process versioned, reviewable, and reproducible.
-
-### Amazon ECR
-Amazon ECR is the chosen registry for the AWS-based implementation of this lab.
-
-Why ECR for this project:
-- native AWS integration
-- simple IAM-based authentication model
-- no need to self-manage registry infrastructure
-- good fit for EC2/EKS-based delivery flows
-- clean integration for image push from Jenkins
-
-The project may later be extended to compare ECR with alternative enterprise registries such as:
-- Nexus Repository
-- JFrog Artifactory / JFrog Container Registry
-
-### Argo CD
-Argo CD is used as the GitOps delivery controller.
-
-Its role is to:
-- monitor the desired application state stored in Git
-- detect drift between Git and the live Kubernetes cluster
-- synchronize the cluster automatically or manually
-- provide deployment visibility and reconciliation tracking
-
-In the target architecture, Argo CD does **not** receive direct deployment commands from Jenkins.  
-Instead, Jenkins updates Git, and Argo CD reacts to Git changes.
-
-This enforces a clean GitOps model:
-- no direct imperative deploy from CI
-- deployment state is declarative
-- the cluster is reconciled from Git
-
----
-
-## Roadmap V1 → V4
-
-### V1 — Jenkins + Docker on EC2
-Initial validation of the CI foundation.
-
-**Goals**
-- Provision infrastructure with Terraform
-- Run Jenkins on EC2
-- Install and validate Docker
-- Build and serve the Mario platformer application
-- Validate `terraform apply` / `destroy`
-
-**Status**
-- Foundation completed and validated
-
----
-
-### V2 — Container Registry Integration (ECR)
-Extend the pipeline to publish versioned images into a managed registry.
-
-**Goals**
-- Create Amazon ECR repository
-- Grant Jenkins permissions to authenticate and push images
-- Update Terraform to include ECR resources and IAM policies
-- Update Jenkins pipeline to:
-  - build image
-  - tag image
-  - push image to ECR
-
-**Target Outcome**
-- CI produces deployable container artifacts in a registry
-
----
-
-### V3 — GitOps Integration with Argo CD
-Introduce declarative continuous delivery.
-
-**Goals**
-- Create GitOps deployment structure
-- Store image references in deployment manifests
-- Configure Argo CD application
-- Enable automated sync from Git to Kubernetes
-- Demonstrate full flow:
-  - code change
-  - new image
-  - manifest update
-  - cluster sync
-
-**Target Outcome**
-- End-to-end CI/CD + GitOps working flow
-
----
-
-### V4 — Enterprise Hardening and Promotion Flow
-Move from functional lab to enterprise-grade delivery model.
-
-**Goals**
-- Separate application repo and GitOps repo
-- Introduce environment strategy (`dev`, `stage`, `prod`)
-- Improve tagging and release discipline
-- Add rollback and promotion patterns
-- Optionally integrate:
-  - Argo CD Image Updater
-  - Helm/Kustomize overlays
-  - RBAC and project boundaries
-  - quality gates and policy checks
-  - vulnerability scanning and image retention policies
-
-**Target Outcome**
-- Reproducible enterprise-style delivery reference architecture
+### CI / Operations
+- Jenkins
+- Docker
+- Trivy
+- AWS Systems Manager Session Manager
 
 ---
 
 ## Repository Structure
 
+```text
+.
+├── app/                        # Next.js App Router entrypoints
+├── components/                 # UI and game canvas components
+├── engine/                     # Core game engine logic
+├── entities/                   # Game domain entities
+├── hooks/                      # Custom React hooks
+├── levels/                     # Level definitions and loading logic
+├── store/                      # Zustand store
+├── utils/                      # Shared utilities and constants
+├── infra/
+│   └── jenkins-ec2/
+│       ├── main.tf             # Core AWS infrastructure
+│       ├── ecr.tf              # Amazon ECR repository and lifecycle policy
+│       ├── iam_ecr.tf          # IAM policy/attachment for ECR access
+│       ├── outputs.tf          # Terraform outputs
+│       ├── variables.tf        # Terraform variables
+│       ├── versions.tf         # Terraform/provider version constraints
+│       └── user_data.sh.tftpl  # EC2 bootstrap script for Jenkins host
+├── Dockerfile                  # Container image definition
+├── Jenkinsfile                 # CI pipeline definition
+├── package.json                # Node.js / Next.js project definition
+├── package-lock.json           # Dependency lock file
+├── next.config.ts              # Next.js configuration
+└── README.md                   # Project documentatio
 
-mario-platformer/
-├── app/                      # Application source (optional future separation)
-├── components/               # Frontend/game UI components
-├── infra/                    # Terraform and infrastructure code
-├── k8s/                      # Kubernetes manifests or Helm/Kustomize (future)
-├── Jenkinsfile               # CI pipeline definition
-├── Dockerfile                # Container build definition
-└── README.md                 # Project documentation
+
+Architecture
+Application Layer
+A browser-playable Mario-inspired 2D platformer built with Next.js, React, and TypeScript.
+Infrastructure Layer
+Terraform provisions:
+
+a dedicated VPC
+public subnets
+internet gateway and route table
+a Jenkins EC2 instance
+an IAM role and instance profile
+a security group restricted to the admin CIDR
+an Amazon ECR repository for container image publication
+
+CI Layer
+Jenkins is used as the CI engine to:
+
+check out source code
+run Node.js quality gates
+build the Docker image
+scan the image with Trivy
+tag the image with build metadata
+publish the image to Amazon ECR
+
+Registry Layer
+Amazon ECR stores:
+
+build-number tags
+Git short SHA tags
+an optional latest tag for lab convenience
+
+
+Validation Status
+V1 - Fully Validated
+The following V1 workflow has been validated end-to-end:
+
+Terraform apply
+Jenkins + Docker bootstrap on EC2
+Local Docker image build
+Local container deployment on the Jenkins EC2 host
+Application health verification
+Terraform destroy
+
+V2 - Successfully Validated
+The following V2 workflow has now been validated successfully:
+
+Amazon ECR repository provisioned with Terraform
+ECR lifecycle policy configured
+ECR image scanning on push enabled
+IAM policy attached to the Jenkins EC2 role for ECR authentication and image push
+Jenkins EC2 host configured with:
+
+Jenkins
+Docker
+AWS CLI
+Node.js / npm
+Trivy
+
+
+Jenkins user validated for:
+
+Docker access
+AWS role resolution
+Amazon ECR authentication
+
+
+Jenkins pipeline validated for:
+
+source checkout
+image build
+Trivy scan
+ECR authentication
+image tagging
+successful image publication to Amazon ECR
+
+
+
+
+AWS Resources
+Network
+
+Dedicated VPC for the lab
+Two public subnets
+Internet Gateway
+Public route table
+
+Compute
+
+Jenkins EC2 instance with:
+
+Docker
+Jenkins
+AWS CLI
+Node.js / npm
+Trivy
+
+
+
+Registry
+
+ECR repository:
+
+supermario-mario-platformer
+
+
+
+
+Security Notes
+This lab adopts several security-minded practices:
+
+Restricted inbound access using an admin CIDR allowlist
+EC2 management through AWS Systems Manager Session Manager
+IAM instance profile instead of static AWS credentials on the host
+ECR image scanning on push
+Trivy image scanning in the CI pipeline
+Encrypted EC2 root volume
+ECR encryption enabled with AES256
+
+
+CI Pipeline Flow (V2)
+The V2 pipeline follows this sequence:
+
+Checkout source
+Resolve build metadata
+Preflight checks
+
+Docker
+AWS CLI
+Trivy
+Node.js / npm
+
+
+Quality gates
+
+npm ci
+npm run lint
+npm run build
+
+
+Build Docker image
+Scan image with Trivy
+Authenticate to Amazon ECR
+Tag image
+
+build number
+Git short SHA
+latest
+
+
+Push image to ECR
+Archive build metadata and scan output
+
+
+Terraform Outputs
+After terraform apply, useful outputs include:
+
+instance_id
+public_ip
+ssm_shell_command
+ssm_port_forward_jenkins
+ssm_port_forward_mario
+ecr_repository_name
+ecr_repository_url
+
+Example:
+
+
+ecr_repository_name = "supermario-mario-platformer"
+ecr_repository_url  = "132334512300.dkr.ecr.eu-central-1.amazonaws.com/supermario-mario-platformer"
+
+
+1. Provision infrastructure
+
+
+cd infra/jenkins-ec2
+terraform init
+terraform apply -var-file=terraform.tfvars
+
+
+2. Access the Jenkins host with SSM
+
+
+aws ssm start-session --target <instance-id>
+
+
+3. Optional: port-forward Jenkins locally
+
+
+aws ssm start-session \
+  --target <instance-id> \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'
+
+ Then open: http://localhost:8080
+
+
+
+4. Run the Jenkins pipeline
+The V2 pipeline:
+
+builds the image
+scans it with Trivy
+authenticates to Amazon ECR
+pushes versioned image tags to ECR
+
+
+
+5. Verify ECR publication
+
+aws ecr describe-images \
+  --repository-name supermario-mario-platformer \
+  --region eu-central-1
+
+
+6. Destroy infrastructure when finished
+
+terraform destroy -var-file=terraform.tfvars
+
+
+
+Operational Notes
+
+The Jenkins EC2 instance is intended to act as a CI engine, not as the final runtime target for production deployment.
+The published container image is the primary output of the V2 workflow.
+Future delivery stages can consume the ECR image from ECS, EKS, or a GitOps-driven deployment model.
+
+
+Roadmap
+Planned next steps include:
+
+Harden Trivy policy after image/runtime optimization
+Improve Docker image optimization with Next.js standalone output
+Add TypeScript type checking as an additional CI quality gate
+Integrate SonarQube
+Introduce environment promotion strategy (dev / stage / prod)
+Add CD integration using ECS, EKS, or ArgoCD
+Evolve toward a GitOps-based deployment model
+Improve secrets management and credential handling
+
+
+
+This repository is intentionally built as more than a simple game demo.
+It demonstrates how to evolve a small web application into a production-style DevOps workflow by combining:
+
+infrastructure as code
+containerization
+CI quality and security checks
+artifact publication
+AWS-native registry integration
+
+The goal is not only to run the application, but also to package and validate it in a way that is closer to real enterprise delivery practices.
