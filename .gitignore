@@ -18,6 +18,7 @@ yarn-error.log*
 **/.terraform/*
 *.tfstate
 *.tfstate.*
+*.bak
 crash.log
 override.tf
 override.tf.json
@@ -38,3 +39,9 @@ Thumbs.db
 *.bak
 *.tmp
 last-show.txt
+
+node_modules
+.git
+.gitignore
+
+

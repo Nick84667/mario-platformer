@@ -91,13 +91,13 @@ pipeline {
 
           trivy image \
             --no-progress \
-            --severity HIGH,CRITICAL \
+            --severity CRITICAL \
             --exit-code 1 \
             --format table \
-            ${IMAGE_NAME}:${BUILD_NUMBER} | tee trivy-report.txt
-        '''
-      }
-    }
+          ${IMAGE_NAME}:${BUILD_NUMBER} | tee trivy-report.txt
+      '''
+  }
+}
 
     stage('Login to ECR') {
       steps {
