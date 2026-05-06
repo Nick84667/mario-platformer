@@ -80,6 +80,9 @@ Validate a full DevOps lifecycle across infrastructure, CI, security and CD laye
 
 ## Architecture
 
+![Mario Platformer GitOps CI/CD Architecture](docs/images/mario-platformer-gitops.gif)
+
+```text
 Developer
    │
    ├── Pushes code to GitHub
@@ -135,6 +138,7 @@ Hetzner K3s Cluster
    │
    ▼
 Mario Platformer Application
+```
 
 Why This Architecture
 This project was intentionally built using a GitOps-based architecture instead of a traditional direct deployment pipeline.
