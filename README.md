@@ -172,15 +172,33 @@ The GitOps repository is the source of truth.
 
 
 ## Repository Design
-The project is split into two repositories.
 
-1. Application Repository
+The project is split into two repositories:
 
+1. **Application Repository**
+2. **GitOps Repository**
+
+This separation is intentional and follows a production-oriented GitOps model.
+
+The application repository contains the source code, Dockerfile and Jenkins pipeline.
+
+The GitOps repository contains the Kubernetes desired state, Kustomize overlays and ArgoCD configuration.
+
+---
+
+## 1. Application Repository
+
+Repository:
+
+```text
 github.com/Nick84667/mario-platformer
+```
 
-This repository contains the application source code and the CI pipeline definition.
+This repository contains the Mario Platformer application source code and the CI pipeline definition.
+
 Main structure:
 
+```text
 mario-platformer
 ├── app/
 ├── components/
@@ -198,16 +216,87 @@ mario-platformer
 ├── next.config.ts
 ├── sonar-project.properties
 └── README.md
+```
 
 This repository is responsible for:
 
-storing the Mario Platformer source code
-defining the Docker build
-defining the Jenkins CI pipeline
-executing quality gates
-executing security scans
-publishing images to GHCR
-updating the GitOps repository with the new image tag
+- storing the Mario Platformer source code;
+- defining the Docker image build;
+- defining the Jenkins CI pipeline;
+- executing application quality gates;
+- executing security scans;
+- publishing validated images to GitHub Container Registry;
+- updating the GitOps repository with the new image tag.
+
+---
+
+## 2. GitOps Repository
+
+Repository:
+
+```text
+github.com/Nick84667/Mario-platformer-gitops
+```
+
+This repository contains the Kubernetes desired state.
+
+Main structure:
+
+```text
+Mario-platformer-gitops
+├── apps
+│   └── mario-platformer
+│       ├── base
+│       │   ├── deployment.yaml
+│       │   ├── service.yaml
+│       │   ├── ingress.yaml
+│       │   └── kustomization.yaml
+│       └── overlays
+│           └── dev
+│               └── kustomization.yaml
+└── argocd
+    ├── applications
+    │   └── mario-platformer-dev.yaml
+    └── projects
+        └── mario-platformer-project.yaml
+```
+
+This repository is responsible for:
+
+- defining Kubernetes resources;
+- managing Kustomize base manifests;
+- managing the `dev` overlay;
+- storing the desired runtime state of the application;
+- allowing ArgoCD to synchronize the K3s cluster;
+- enabling rollback through Git history;
+- keeping deployment changes auditable and traceable.
+
+---
+
+## Why Two Repositories?
+
+The project uses two repositories to separate application delivery from environment configuration.
+
+```text
+Application repository
+    → source code, Dockerfile, Jenkinsfile, CI pipeline
+
+GitOps repository
+    → Kubernetes manifests, Kustomize overlays, ArgoCD configuration
+```
+
+This separation provides:
+
+- clearer ownership;
+- better traceability;
+- safer deployments;
+- easier rollbacks;
+- cleaner CI/CD design;
+- alignment with GitOps best practices.
+
+Jenkins works on the application repository, builds the Docker image, pushes the image to GHCR and then updates the GitOps repository.
+
+ArgoCD watches the GitOps repository and applies the desired state to K3s.
 
 
 2. GitOps Repository
