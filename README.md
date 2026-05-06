@@ -45,21 +45,21 @@ Image registry: ghcr.io/nick84667/mario-platformer
 
 ## Core Technologies
 
-Terraform
-Hetzner Cloud
-Ubuntu 24.04 LTS
-Docker
-Jenkins
-K3s
-ArgoCD
-SonarQube
-Trivy
-GitHub Container Registry
-Kustomize
-GitHub
-Next.js
-Node.js
-Linux / SSH
+- Terraform
+- Hetzner Cloud
+- Ubuntu 24.04 LTS
+- Docker
+- Jenkins
+- K3s
+- ArgoCD
+- SonarQube
+- Trivy
+- GitHub Container Registry
+- Kustomize
+- GitHub
+- Next.js
+- Node.js
+- Linux / SSH
 
 ## Project Goals
 
