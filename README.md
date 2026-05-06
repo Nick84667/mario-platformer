@@ -1,335 +1,654 @@
-# Mario Platformer
+# Mario Platformer GitOps CI/CD Lab
 
-Production-style DevOps lab repository that demonstrates how to build, secure, and package a browser-playable 2D platformer on AWS using Terraform, Jenkins, Docker, Trivy, and Amazon ECR.
+Hands-on DevOps and GitOps project focused on Jenkins, Docker, SonarQube, Trivy, GHCR, Kustomize, ArgoCD, K3s, Terraform and Hetzner Cloud.
+
+docs/images/mario-platformer-gitops.gif
 
 ---
 
 ## Overview
 
-This repository combines three main layers:
+This project showcases a complete end-to-end CI/CD and GitOps lab where I built, scanned, published and deployed a containerized Next.js Mario Platformer application on a Kubernetes environment.
 
-- **Application layer**: a Next.js-based Mario-style browser game
-- **Infrastructure layer**: Terraform code to provision AWS networking, IAM, an EC2 Jenkins host, and an Amazon ECR repository
-- **CI layer**: a Jenkins pipeline that builds the application container image, scans it with Trivy, and publishes versioned images to Amazon ECR
+The environment was built on Hetzner Cloud, provisioned with Terraform, orchestrated with K3s, automated through Jenkins, secured with SonarQube and Trivy, published to GitHub Container Registry, and deployed through ArgoCD using a GitOps workflow.
 
-The project started as a validated **V1 lab**, where Jenkins built and ran the container locally on EC2.  
-It has now evolved into a **V2 model**, where Jenkins acts as a CI engine that produces versioned container artifacts for Amazon ECR and future deployment workflows.
+The main goal of this lab was to simulate a realistic modern DevOps platform where application code, container images, Kubernetes manifests and deployment automation are managed through a clean and traceable delivery process.
 
----
+This project demonstrates practical skills across:
 
-## Objectives
-
-- Provision a reproducible AWS lab environment with Terraform
-- Bootstrap Jenkins, Docker, AWS CLI, Node.js, and Trivy on an EC2 instance
-- Package a Next.js browser game as a Docker image
-- Run CI quality checks before image publication
-- Scan container images for vulnerabilities with Trivy
-- Publish versioned images to Amazon ECR
-- Prepare the repository for future CD / GitOps integration
+- Infrastructure as Code
+- CI/CD automation
+- Docker containerization
+- Code quality analysis
+- Container security scanning
+- GitOps deployment
+- Kubernetes operations
+- Image registry integration
+- Application release traceability
 
 ---
 
-## Tech Stack
+## Live Environment
 
-### Application
-- Next.js
-- React
-- TypeScript
-- Zustand
-
-### Infrastructure
-- Terraform
-- AWS EC2
-- Amazon VPC
-- IAM
-- Security Groups
-- Amazon ECR
-
-### CI / Operations
-- Jenkins
-- Docker
-- Trivy
-- AWS Systems Manager Session Manager
-
----
-
-## Repository Structure
-
-```text
-.
-├── app/                        # Next.js App Router entrypoints
-├── components/                 # UI and game canvas components
-├── engine/                     # Core game engine logic
-├── entities/                   # Game domain entities
-├── hooks/                      # Custom React hooks
-├── levels/                     # Level definitions and loading logic
-├── store/                      # Zustand store
-├── utils/                      # Shared utilities and constants
-├── infra/
-│   └── jenkins-ec2/
-│       ├── main.tf             # Core AWS infrastructure
-│       ├── ecr.tf              # Amazon ECR repository and lifecycle policy
-│       ├── iam_ecr.tf          # IAM policy/attachment for ECR access
-│       ├── outputs.tf          # Terraform outputs
-│       ├── variables.tf        # Terraform variables
-│       ├── versions.tf         # Terraform/provider version constraints
-│       └── user_data.sh.tftpl  # EC2 bootstrap script for Jenkins host
-├── Dockerfile                  # Container image definition
-├── Jenkinsfile                 # CI pipeline definition
-├── package.json                # Node.js / Next.js project definition
-├── package-lock.json           # Dependency lock file
-├── next.config.ts              # Next.js configuration
-└── README.md                   # Project documentatio
+Production-style development environment:
 
 
-Architecture
-Application Layer
-A browser-playable Mario-inspired 2D platformer built with Next.js, React, and TypeScript.
-Infrastructure Layer
-Terraform provisions:
+Mario Platformer running on Hetzner K3s
 
-a dedicated VPC
-public subnets
-internet gateway and route table
-a Jenkins EC2 instance
-an IAM role and instance profile
-a security group restricted to the admin CIDR
-an Amazon ECR repository for container image publication
+Application runtime:
 
-CI Layer
-Jenkins is used as the CI engine to:
-
-check out source code
-run Node.js quality gates
-build the Docker image
-scan the image with Trivy
-tag the image with build metadata
-publish the image to Amazon ECR
-
-Registry Layer
-Amazon ECR stores:
-
-build-number tags
-Git short SHA tags
-an optional latest tag for lab convenience
+K3s namespace: mario-dev
+Container port: 3000
+Image registry: ghcr.io/nick84667/mario-platformer
 
 
-Validation Status
-V1 - Fully Validated
-The following V1 workflow has been validated end-to-end:
 
-Terraform apply
-Jenkins + Docker bootstrap on EC2
-Local Docker image build
-Local container deployment on the Jenkins EC2 host
-Application health verification
-Terraform destroy
+## Core Technologies
 
-V2 - Successfully Validated
-The following V2 workflow has now been validated successfully:
+Terraform
+Hetzner Cloud
+Ubuntu 24.04 LTS
+Docker
+Jenkins
+K3s
+ArgoCD
+SonarQube
+Trivy
+GitHub Container Registry
+Kustomize
+GitHub
+Next.js
+Node.js
+Linux / SSH
 
-Amazon ECR repository provisioned with Terraform
-ECR lifecycle policy configured
-ECR image scanning on push enabled
-IAM policy attached to the Jenkins EC2 role for ECR authentication and image push
-Jenkins EC2 host configured with:
+## Project Goals
+
+Provision cloud infrastructure using Terraform
+Build a realistic Jenkins-based CI pipeline
+Containerize a Next.js application using Docker
+Run application quality checks before image publishing
+Integrate SonarQube for static code analysis
+Integrate Trivy for container vulnerability scanning
+Push validated Docker images to GitHub Container Registry
+Separate application source code from Kubernetes deployment manifests
+Use a dedicated GitOps repository as the Kubernetes source of truth
+Deploy the application to K3s using ArgoCD
+Manage Kubernetes manifests with Kustomize overlays
+Implement a traceable build → scan → push → deploy workflow
+Validate a full DevOps lifecycle across infrastructure, CI, security and CD layers
+
+
+## Architecture
+
+Developer
+   │
+   ├── Pushes code to GitHub
+   │
+   ▼
+Application Repository
+github.com/Nick84667/mario-platformer
+   │
+   ├── Jenkinsfile
+   ├── Dockerfile
+   ├── Next.js source code
+   └── sonar-project.properties
+   │
+   ▼
+Jenkins CI Pipeline
+   │
+   ├── Checkout source code
+   ├── Install dependencies
+   ├── Run lint
+   ├── Run typecheck
+   ├── Build application
+   ├── Run SonarQube scan
+   ├── Build Docker image
+   ├── Run Trivy image scan
+   └── Push image to GHCR
+   │
+   ▼
+GitHub Container Registry
+ghcr.io/nick84667/mario-platformer
+   │
+   ▼
+GitOps Repository Update
+github.com/Nick84667/Mario-platformer-gitops
+   │
+   ├── apps/mario-platformer/base
+   └── apps/mario-platformer/overlays/dev
+   │
+   ▼
+ArgoCD
+   │
+   ├── Detects GitOps repository change
+   ├── Compares desired state with cluster state
+   └── Synchronizes the application
+   │
+   ▼
+Hetzner K3s Cluster
+   │
+   ├── Namespace: mario-dev
+   ├── Deployment
+   ├── Service
+   ├── Ingress
+   └── imagePullSecrets
+   │
+   ▼
+Mario Platformer Application
+
+Why This Architecture
+This project was intentionally built using a GitOps-based architecture instead of a traditional direct deployment pipeline.
+In a basic CI/CD setup, Jenkins could deploy directly to Kubernetes using:
+
+kubectl apply
+
+However, this lab follows a cleaner and more production-oriented model:
+
+Jenkins builds and validates the application.
+Jenkins publishes the Docker image.
+Jenkins updates the GitOps repository.
+ArgoCD deploys the desired state from Git.
+
+
+This provides a strong separation between CI and CD.
+Jenkins is responsible for producing a validated artifact.
+ArgoCD is responsible for applying the desired state to Kubernetes.
+This design improves:
+
+traceability
+auditability
+rollback capability
+environment consistency
+security boundaries
+deployment visibility
+operational control
+
+The Kubernetes cluster is not modified manually and Jenkins does not directly apply manifests to the cluster.
+The GitOps repository is the source of truth.
+
+
+## Repository Design
+The project is split into two repositories.
+
+1. Application Repository
+
+github.com/Nick84667/mario-platformer
+
+This repository contains the application source code and the CI pipeline definition.
+Main structure:
+
+mario-platformer
+├── app/
+├── components/
+├── engine/
+├── entities/
+├── hooks/
+├── levels/
+├── public/
+├── store/
+├── utils/
+├── Dockerfile
+├── Jenkinsfile
+├── package.json
+├── package-lock.json
+├── next.config.ts
+├── sonar-project.properties
+└── README.md
+
+This repository is responsible for:
+
+storing the Mario Platformer source code
+defining the Docker build
+defining the Jenkins CI pipeline
+executing quality gates
+executing security scans
+publishing images to GHCR
+updating the GitOps repository with the new image tag
+
+
+2. GitOps Repository
+
+github.com/Nick84667/Mario-platformer-gitops
+
+This repository contains the Kubernetes desired state.
+Main structure:
+
+Mario-platformer-gitops
+├── apps
+│   └── mario-platformer
+│       ├── base
+│       │   ├── deployment.yaml
+│       │   ├── service.yaml
+│       │   ├── ingress.yaml
+│       │   └── kustomization.yaml
+│       └── overlays
+│           └── dev
+│               └── kustomization.yaml
+└── argocd
+    ├── applications
+    │   └── mario-platformer-dev.yaml
+    └── projects
+        └── mario-platformer-project.yaml
+
+This repository is responsible for:
+
+defining Kubernetes resources
+managing Kustomize base manifests
+managing the dev overlay
+storing the desired runtime state
+allowing ArgoCD to synchronize the cluster
+enabling rollback through Git
+
+What I Implemented
+
+1. Provisioned the Infrastructure with Terraform
+Provisioned → Configured → Validated → Deployed
+Terraform was used to provision the cloud infrastructure required for the lab environment on Hetzner Cloud.
+The infrastructure layer was designed to support:
 
 Jenkins
 Docker
-AWS CLI
-Node.js / npm
-Trivy
+K3s
+ArgoCD
+SonarQube
+GitOps deployment flow
+
+Terraform was used to make the infrastructure repeatable and disposable.
+Typical Terraform workflow:
+
+terraform init
+terraform validate
+terraform plan
+terraform apply
+
+The goal was to create a reproducible platform foundation instead of manually provisioning cloud resources.
+
+2. Configured Jenkins as the CI Engine
+Jenkins was configured as the main Continuous Integration engine.
+The Jenkins pipeline is defined in the root-level Jenkinsfile.
+Jenkins is responsible for:
+
+checkout
+preflight validation
+dependency installation
+lint
+typecheck
+application build
+SonarQube analysis
+Docker image build
+Trivy image scan
+GHCR push
+GitOps repository update
+
+The pipeline uses Jenkins Credentials for secret management.
+Configured Jenkins credentials:
+
+ghcr-creds
+github-pat
+sonar-token
+
+No secret is stored inside the Git repository.
 
 
-Jenkins user validated for:
-
-Docker access
-AWS role resolution
-Amazon ECR authentication
-
-
-Jenkins pipeline validated for:
-
-source checkout
-image build
-Trivy scan
-ECR authentication
-image tagging
-successful image publication to Amazon ECR
-
-
-
-
-AWS Resources
-Network
-
-Dedicated VPC for the lab
-Two public subnets
-Internet Gateway
-Public route table
-
-Compute
-
-Jenkins EC2 instance with:
-
-Docker
-Jenkins
-AWS CLI
-Node.js / npm
-Trivy
-
-
-
-Registry
-
-ECR repository:
-
-supermario-mario-platformer
-
-
-
-
-Security Notes
-This lab adopts several security-minded practices:
-
-Restricted inbound access using an admin CIDR allowlist
-EC2 management through AWS Systems Manager Session Manager
-IAM instance profile instead of static AWS credentials on the host
-ECR image scanning on push
-Trivy image scanning in the CI pipeline
-Encrypted EC2 root volume
-ECR encryption enabled with AES256
-
-
-CI Pipeline Flow (V2)
-The V2 pipeline follows this sequence:
-
-Checkout source
-Resolve build metadata
-Preflight checks
-
-Docker
-AWS CLI
-Trivy
-Node.js / npm
-
-
-Quality gates
+3. Implemented Application Quality Gates
+Before building and publishing the Docker image, the pipeline validates the application.
+Quality gate commands:
 
 npm ci
 npm run lint
+npm run typecheck
 npm run build
 
+These checks ensure that:
 
-Build Docker image
-Scan image with Trivy
-Authenticate to Amazon ECR
-Tag image
+dependencies are installed cleanly
+linting rules pass
+TypeScript checks pass
+the Next.js application builds successfully
 
-build number
-Git short SHA
+If one of these steps fails, the pipeline stops immediately.
+This prevents broken code from being packaged and deployed.
+
+4. Integrated SonarQube Code Analysis
+SonarQube was integrated into the Jenkins pipeline to provide static code analysis.
+The scan helps detect:
+
+bugs
+code smells
+duplicated code
+maintainability issues
+security hotspots
+quality regressions
+
+The SonarQube token is stored in Jenkins Credentials as:
+sonar-token
+
+Example scan step:
+
+sonar-scanner \
+  -Dsonar.projectKey=mario-platformer \
+  -Dsonar.projectName=mario-platformer \
+  -Dsonar.sources=. \
+  -Dsonar.host.url=${SONAR_HOST_URL} \
+  -Dsonar.login=${SONAR_TOKEN}
+
+
+5. Built a Production Docker Image
+The application is packaged using a multi-stage Dockerfile.
+The Dockerfile contains three main stages:
+
+deps
+builder
+runner
+
+The deps stage installs dependencies.
+The builder stage runs typecheck and builds the Next.js application.
+The runner stage creates the final production container.
+The final image:
+
+runs in production mode
+exposes port 3000
+runs as a non-root user
+starts the Next.js standalone server
+
+Runtime command:
+
+CMD ["node", "server.js"]
+
+The image is tagged with:
+BUILD_NUMBER
+GIT_SHA_SHORT
+BUILD_NUMBER-GIT_SHA_SHORT
 latest
 
+Example: ghcr.io/nick84667/mario-platformer:23-589ea11f
 
-Push image to ECR
-Archive build metadata and scan output
+6. Added Container Security Scanning with Trivy
+Trivy was integrated into the Jenkins pipeline to scan the Docker image before publishing it.
+The pipeline blocks the release if vulnerabilities with the following severities are found:
+
+HIGH
+CRITICAL
+
+Example scan:
+
+trivy image \
+  --no-progress \
+  --severity HIGH,CRITICAL \
+  --exit-code 1 \
+  --format table \
+  ghcr.io/nick84667/mario-platformer:${IMAGE_TAG}
+
+This adds a DevSecOps layer to the delivery process.
+If the image is not secure enough, the pipeline fails and the image is not promoted.
+
+7. Published the Image to GitHub Container Registry
+After a successful build and scan, Jenkins authenticates to GitHub Container Registry.
+The image is pushed to:
+
+ghcr.io/nick84667/mario-platformer
+
+Jenkins pushes multiple tags:
+docker push ghcr.io/nick84667/mario-platformer:${BUILD_NUMBER}
+docker push ghcr.io/nick84667/mario-platformer:${GIT_SHA_SHORT}
+docker push ghcr.io/nick84667/mario-platformer:${IMAGE_TAG}
+docker push ghcr.io/nick84667/mario-platformer:latest
+
+The Kubernetes deployment uses the immutable tag: BUILD_NUMBER-GIT_SHA_SHORT
+
+This ensures that each deployment can be traced back to a specific Jenkins build and Git commit.
+
+8. Implemented GitOps Deployment with Kustomize
+After pushing the Docker image, Jenkins updates the GitOps repository.
+The target file is: apps/mario-platformer/overlays/dev/kustomization.yaml
+
+The file contains:
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: mario-dev
+
+resources:
+  - ../../base
+
+images:
+  - name: ghcr.io/nick84667/mario-platformer
+    newTag: bootstrap
+
+Jenkins updates the image tag using Kustomize:
+
+kustomize edit set image \
+  ghcr.io/nick84667/mario-platformer=ghcr.io/nick84667/mario-platformer:${IMAGE_TAG}
+
+Then Jenkins commits and pushes the change:
+
+git add apps/mario-platformer/overlays/dev/kustomization.yaml
+git commit -m "chore: deploy mario-platformer image ${IMAGE_TAG}"
+git push origin main
+
+This Git commit becomes the trigger for ArgoCD.
+
+9. Deployed the Application with ArgoCD
+ArgoCD was configured to monitor the GitOps repository.
+ArgoCD watches the path:  desired state in Git  with: actual state in K3s
+If the states differ, ArgoCD synchronizes the application.
+Expected final state:
 
 
-Terraform Outputs
-After terraform apply, useful outputs include:
+Synced
+Healthy
 
-instance_id
-public_ip
-ssm_shell_command
-ssm_port_forward_jenkins
-ssm_port_forward_mario
-ecr_repository_name
-ecr_repository_url
+This confirms that the Kubernetes deployment matches the GitOps repository.
 
+10. Deployed on K3s
+The application runs on a lightweight Kubernetes cluster based on K3s.
+The target namespace is: mario-dev
+
+Main Kubernetes resources:
+Deployment
+Service
+Ingress
+imagePullSecrets
+Namespace
+
+The Deployment pulls the container image from GHCR.
+The Service exposes the application internally.
+The Ingress or port-forwarding exposes the application for browser access.
+The application listens on: 3000
+
+## CI/CD Flow
+The complete CI/CD flow is:
+
+1. Developer pushes code to GitHub.
+2. Jenkins checks out the source code.
+3. Jenkins installs dependencies.
+4. Jenkins runs lint, typecheck and build.
+5. Jenkins runs SonarQube analysis.
+6. Jenkins builds the Docker image.
+7. Jenkins scans the image with Trivy.
+8. Jenkins logs in to GHCR.
+9. Jenkins pushes the image to GHCR.
+10. Jenkins updates the GitOps repository.
+11. ArgoCD detects the GitOps commit.
+12. ArgoCD synchronizes the K3s cluster.
+13. Kubernetes rolls out the new version.
+14. Mario Platformer is updated.
+
+
+## GitOps Flow
+The GitOps deployment model is:
+
+Jenkins does not deploy directly to Kubernetes.
+Jenkins updates Git.
+ArgoCD deploys from Git.
+
+This provides a clean separation of responsibilities.
+Jenkins produces the artifact.
+ArgoCD applies the desired state.
+Git remains the source of truth.
+
+
+## Security Practices
+Implemented security practices:
+
+Jenkins Credentials for secrets
+No hardcoded tokens in Git
+SonarQube static code analysis
+Trivy container vulnerability scanning
+Non-root container execution
+Immutable image tags
+GitOps-based deployment control
+No direct Jenkins deployment to Kubernetes
+
+Container user hardening:
+
+RUN addgroup -S nextjs && adduser -S nextjs -G nextjs
+
+USER nextjs
+
+
+Required Jenkins Credentials
+The pipeline requires the following Jenkins credentials.
+ghcr-creds
+Used to authenticate Docker against GitHub Container Registry.
+Type:   Username with password
+
+Required GitHub token permissions:
+read:packages
+write:packages
+repo
+
+## github-pat
+Used to clone, commit and push changes to the GitOps repository.
+Type: Secret text
+
+## sonar-token
+Used by SonarQube Scanner.
+Type: Secret text
+
+
+## Required Tools on Jenkins Agent
+The Jenkins agent must have the following tools installed:
+
+docker
+git
+node
+npm
+trivy
+sonar-scanner
+kustomize
+
+The pipeline validates these tools during the preflight stage.
+
+## Validation Commands
+Check ArgoCD applications: kubectl -n argocd get applications
+Check application pods:    kubectl -n mario-dev get pods
+Check services:            kubectl -n mario-dev get svc
+Check ingress:             kubectl -n mario-dev get ingress
+Check running image:
+
+kubectl -n mario-dev get deployment mario-platformer \
+  -o=jsonpath='{.spec.template.spec.containers[0].image}'
+
+Expected image format:  ghcr.io/nick84667/mario-platformer:<BUILD_NUMBER>-<GIT_SHA_SHORT>
+
+## Rollback Strategy
+Rollback is managed through GitOps.
+To roll back to a previous version, revert the GitOps commit that changed the image tag.
 Example:
 
 
-ecr_repository_name = "supermario-mario-platformer"
-ecr_repository_url  = "132334512300.dkr.ecr.eu-central-1.amazonaws.com/supermario-mario-platformer"
+git revert <commit_id>
+git push origin main
 
 
-1. Provision infrastructure
+ArgoCD detects the revert and synchronizes the K3s cluster back to the previous desired state.
+This makes rollback:
+
+simple
+traceable
+auditable
+Git-driven
+reproducible
 
 
-cd infra/jenkins-ec2
-terraform init
-terraform apply -var-file=terraform.tfvars
+## Real Troubleshooting Experience
+During the implementation I worked through real-world DevOps issues such as:
 
+Jenkins credentials configuration
+GHCR authentication
+Docker build migration from ECR to GHCR
+GitOps repository structure validation
+Kustomize image tag updates
+ArgoCD synchronization
+K3s namespace and imagePullSecrets validation
+SonarQube connectivity
+Trivy scan integration
+SSH access troubleshooting
+Hetzner firewall and access checks
+Jenkins UI timeout investigation
+Git line ending warnings on Windows
+Local and remote Kustomize validation
 
-2. Access the Jenkins host with SSM
+This made the lab more realistic because the environment was not only built, but also debugged and validated across multiple layers.
 
+## Current Lab Status
+Completed:
 
-aws ssm start-session --target <instance-id>
+Hetzner infrastructure provisioned
+Jenkins installed
+Docker available on Jenkins host
+K3s installed and running
+ArgoCD installed and configured
+SonarQube installed
+GitOps repository created
+Kustomize base and dev overlay configured
+ArgoCD application validated as Synced and Healthy
+Mario Platformer reachable from the Kubernetes environment
+Jenkins credentials configured
+Jenkinsfile migrated from AWS ECR to GHCR
+GitOps update stage implemented
+Architecture GIF generated and added to documentation
 
+Next Steps:
 
-3. Optional: port-forward Jenkins locally
+Run final Jenkins pipeline after restoring Jenkins UI access
+Validate GHCR image push
+Validate automatic GitOps repository update
+Validate ArgoCD rollout after Jenkins commit
+Add SonarQube Quality Gate blocking stage
+Add multi-environment overlays for stage and prod
+Add ArgoCD rollback documentation
+Add ApplicationSet for multi-environment deployment
 
+## Key Learning Outcomes
+This project strengthened practical experience in:
 
-aws ssm start-session \
-  --target <instance-id> \
-  --document-name AWS-StartPortForwardingSession \
-  --parameters '{"portNumber":["8080"],"localPortNumber":["8080"]}'
+Terraform-based provisioning
+Linux server management
+Jenkins pipeline design
+Docker image build optimization
+secure credential handling
+SonarQube integration
+Trivy security scanning
+GHCR image publishing
+Kubernetes deployment
+Kustomize overlays
+ArgoCD GitOps workflow
+CI/CD troubleshooting
+cloud lab cost awareness
+end-to-end DevOps architecture design
 
- Then open: http://localhost:8080
+## Final Result
+The final platform implements a complete GitOps-based CI/CD workflow:
 
+Code → Build → Quality Scan → Security Scan → Image Registry → GitOps Update → ArgoCD Sync → K3s Deployment
 
+The most important architectural principle is:
 
-4. Run the Jenkins pipeline
-The V2 pipeline:
+Jenkins produces and validates the artifact.
+Git stores the desired deployment state.
+ArgoCD applies that desired state to Kubernetes.
 
-builds the image
-scans it with Trivy
-authenticates to Amazon ECR
-pushes versioned image tags to ECR
-
-
-
-5. Verify ECR publication
-
-aws ecr describe-images \
-  --repository-name supermario-mario-platformer \
-  --region eu-central-1
-
-
-6. Destroy infrastructure when finished
-
-terraform destroy -var-file=terraform.tfvars
-
-
-
-Operational Notes
-
-The Jenkins EC2 instance is intended to act as a CI engine, not as the final runtime target for production deployment.
-The published container image is the primary output of the V2 workflow.
-Future delivery stages can consume the ECR image from ECS, EKS, or a GitOps-driven deployment model.
-
-
-Roadmap
-Planned next steps include:
-
-Harden Trivy policy after image/runtime optimization
-Improve Docker image optimization with Next.js standalone output
-Add TypeScript type checking as an additional CI quality gate
-Integrate SonarQube
-Introduce environment promotion strategy (dev / stage / prod)
-Add CD integration using ECS, EKS, or ArgoCD
-Evolve toward a GitOps-based deployment model
-Improve secrets management and credential handling
-
-
-
-This repository is intentionally built as more than a simple game demo.
-It demonstrates how to evolve a small web application into a production-style DevOps workflow by combining:
-
-infrastructure as code
-containerization
-CI quality and security checks
-artifact publication
-AWS-native registry integration
-
-The goal is not only to run the application, but also to package and validate it in a way that is closer to real enterprise delivery practices.
+This makes the delivery process secure, repeatable, traceable and aligned with modern DevOps and platform engineering practices.
