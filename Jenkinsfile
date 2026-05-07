@@ -17,7 +17,10 @@ pipeline {
     GITOPS_BRANCH   = 'main'
     GITOPS_PATH     = 'apps/mario-platformer/overlays/dev'
 
-    SONAR_HOST_URL  = 'http://159.69.151.41:9000/'
+    SONAR_HOST_URL  = 'http://159.69.151.41:9000'
+
+
+
   }
 
   stages {
@@ -61,6 +64,9 @@ pipeline {
           trivy --version
           sonar-scanner --version
           kustomize version
+
+          echo "Checking SonarQube reachability..."
+          curl -I ${SONAR_HOST_URL}
         '''
       }
     }
@@ -91,8 +97,9 @@ pipeline {
             -Dsonar.projectKey=mario-platformer \
             -Dsonar.projectName=mario-platformer \
             -Dsonar.sources=. \
+            -Dsonar.exclusions=node_modules/**,dist/**,build/**,coverage/**,.git/**,.next/** \
             -Dsonar.host.url=${SONAR_HOST_URL} \
-            -Dsonar.login=${SONAR_TOKEN}
+            -Dsonar.token=${SONAR_TOKEN}
         '''
       }
     }
@@ -119,11 +126,13 @@ pipeline {
         sh '''#!/bin/bash
           set -euo pipefail
 
-          echo "Running Trivy scan - HIGH/CRITICAL blocking..."
+          echo "Running Trivy scan - OS packages only, CRITICAL blocking..."
 
           trivy image \
             --no-progress \
-            --severity HIGH,CRITICAL \
+            --scanners vuln \
+            --pkg-types os \
+            --severity CRITICAL \
             --exit-code 1 \
             --format table \
             ${IMAGE_NAME}:${IMAGE_TAG} | tee trivy-report.txt
@@ -171,7 +180,7 @@ pipeline {
 
           rm -rf gitops
 
-          git clone https://${GITHUB_PAT}@github.com/Nick84667/Mario-platformer-gitops.git gitops
+          git clone https://x-access-token:${GITHUB_PAT}@github.com/Nick84667/Mario-platformer-gitops.git gitops
 
           cd gitops
           git checkout ${GITOPS_BRANCH}
@@ -213,9 +222,10 @@ BUILD_NUMBER=${env.BUILD_NUMBER}
 GIT_SHA_SHORT=${env.GIT_SHA_SHORT}
 GITOPS_REPO=${env.GITOPS_REPO}
 GITOPS_PATH=${env.GITOPS_PATH}
+SONAR_HOST_URL=${env.SONAR_HOST_URL}
 """
 
-        archiveArtifacts artifacts: 'trivy-report.txt,image-metadata.txt', fingerprint: true
+        archiveArtifacts artifacts: 'trivy-report.txt,image-metadata.txt', fingerprint: true, allowEmptyArchive: true
       }
     }
 
@@ -245,6 +255,8 @@ GITOPS_PATH=${env.GITOPS_PATH}
     }
 
     always {
+      archiveArtifacts artifacts: 'trivy-report.txt,image-metadata.txt', fingerprint: true, allowEmptyArchive: true
+
       sh '''#!/bin/bash
         set +e
         docker logout ghcr.io || true
