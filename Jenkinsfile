@@ -17,7 +17,7 @@ pipeline {
     GITOPS_BRANCH   = 'main'
     GITOPS_PATH     = 'apps/mario-platformer/overlays/dev'
 
-    SONAR_HOST_URL  = 'http://sonarqube:9000'
+    SONAR_HOST_URL  = 'http://159.69.151.41:9000/'
   }
 
   stages {
