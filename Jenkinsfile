@@ -140,21 +140,21 @@ pipeline {
       }
     }
 
-    stage('Login to GHCR') {
-      environment {
-        GHCR_CREDS = credentials('ghcr-creds')
-      }
+   stage('Login to GHCR') {
+  environment {
+    GHCR_CREDS = credentials('ghcr-token')
+  }
 
-      steps {
-        sh '''#!/bin/bash
-          set -euo pipefail
+  steps {
+    sh '''#!/bin/bash
+      set -euo pipefail
 
-          echo "${GHCR_CREDS_PSW}" | docker login ghcr.io \
-            -u "${GHCR_CREDS_USR}" \
-            --password-stdin
-        '''
-      }
-    }
+      echo "${GHCR_CREDS_PSW}" | docker login ghcr.io \
+        -u "${GHCR_CREDS_USR}" \
+        --password-stdin
+    '''
+  }
+}
 
     stage('Push Image to GHCR') {
       steps {
